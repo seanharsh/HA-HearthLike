@@ -1,0 +1,6 @@
+{
+  "name": "HearthLike Cards",
+  "hacs": "1.0.0",
+  "render_readme": true,
+  "filename": "hearthlike-cards.js"
+}

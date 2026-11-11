@@ -1,0 +1,7 @@
+# Example Lovelace dashboard for the HearthLike cards.
+# Placeholder: cards have not been imported yet. Add one example per card as each lands,
+# and keep this file in sync with each card's config options.
+title: HearthLike Example
+views:
+  - title: Family
+    cards: []
