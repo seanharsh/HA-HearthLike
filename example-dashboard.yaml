@@ -1,7 +1,75 @@
 # Example Lovelace dashboard for the HearthLike cards.
-# Placeholder: cards have not been imported yet. Add one example per card as each lands,
-# and keep this file in sync with each card's config options.
+# Replace the calendar entities with your own. The calendar cards need a view with a fixed height,
+# so use a panel view (one card per view) or a sections/grid layout.
 title: HearthLike Example
 views:
-  - title: Family
-    cards: []
+  # All-in-one: Day / Weekly / Monthly tabs plus a floating "+" add-event button.
+  - title: Calendar
+    path: calendar
+    panel: true
+    cards:
+      - type: custom:hearthlike-calendar-card
+        day:
+          columns:               # one column per person
+            - name: Family
+              color: "#378ADD"
+              entities: [calendar.family]
+            - name: Kids
+              color: "#E67E22"
+              entities: [calendar.kids]
+        week:
+          calendars:
+            - entity: calendar.family
+              color: "#378ADD"
+            - entity: calendar.kids
+              color: "#E67E22"
+        month:
+          calendars:
+            - entity: calendar.family
+              color: "#378ADD"
+            - entity: calendar.kids
+              color: "#E67E22"
+        fab:
+          calendars: [calendar.family, calendar.kids]   # omit to offer every calendar
+
+  # The same views as separate cards.
+  - title: Day
+    path: day
+    panel: true
+    cards:
+      - type: custom:hearthlike-day-card
+        hour_start: 0
+        hour_end: 24
+        visible_hours: 10
+        columns:
+          - name: Family
+            color: "#378ADD"
+            entities: [calendar.family]
+
+  - title: Week
+    path: week
+    panel: true
+    cards:
+      - type: custom:hearthlike-week-card
+        hour_start: 0
+        hour_end: 24
+        px_per_hour: 64
+        calendars:
+          - entity: calendar.family
+            color: "#378ADD"
+
+  - title: Month
+    path: month
+    panel: true
+    cards:
+      - type: custom:hearthlike-month-card
+        calendars:
+          - entity: calendar.family
+            color: "#378ADD"
+
+  # A standalone add-event button.
+  - title: Add event
+    path: fab
+    cards:
+      - type: custom:hearthlike-fab-card
+        calendars: [calendar.family]

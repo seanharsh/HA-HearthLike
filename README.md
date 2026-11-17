@@ -1,17 +1,17 @@
 # HearthLike Cards for Home Assistant
 
-Lovelace dashboard cards for a family wall display: a shared calendar (day, week and month views with
-quick add/edit/delete) and a kid-friendly chores list.
+Lovelace dashboard cards for a family wall display: a shared calendar with day, week and month views and
+quick add/edit/delete.
 
-> **Status:** work in progress. The cards have not been imported yet, so there is nothing to install.
+> **Status:** pre-release. There is no tagged release yet, so HACS can't install it until the first one.
 
 - **Calendar views** — day, week and month, plus a combined card with an add-event button
 - **Edit in place** — add, edit and delete calendar events (including recurring ones) from the dashboard
-- **Visual editors** — the calendar cards and the chores card can be configured from the dashboard UI
+- **Visual editors** — the calendar cards can be configured from the dashboard UI
 
 ## Cards at a Glance
 
-_Screenshots and per-card descriptions will be added with the first release._
+_Screenshots will be added with the first release._
 
 | Card | What it does |
 |---|---|
@@ -20,7 +20,6 @@ _Screenshots and per-card descriptions will be added with the first release._
 | Month (`hearthlike-month-card`) | Month grid with event editing |
 | Add event button (`hearthlike-fab-card`) | Floating "+" that creates a calendar event |
 | Calendar (`hearthlike-calendar-card`) | Day / Week / Month in a single card with the add button built in |
-| Chores (`hearthlike-chores-card`) | Per-person chore list (requires the ChoreOps integration) |
 
 ## Installation
 
@@ -43,9 +42,10 @@ _Screenshots and per-card descriptions will be added with the first release._
 - A recent **Home Assistant** release (the exact minimum version will be documented once tested)
 - **Calendar cards**: one or more `calendar.*` entities that support creating and editing events
   (for example [Local Calendar](https://www.home-assistant.io/integrations/local_calendar/))
-- **Chores card**: the ChoreOps integration
 
-See [`example-dashboard.yaml`](example-dashboard.yaml) for a complete example once the cards land.
+The day, week and month cards size themselves to their container, so place them in a panel view or a
+sections/grid layout with a fixed height. See [`example-dashboard.yaml`](example-dashboard.yaml) for a
+complete configuration of every card.
 
 ## License
 
