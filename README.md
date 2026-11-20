@@ -20,6 +20,7 @@ _Screenshots will be added with the first release._
 | Month (`hearthlike-month-card`) | Month grid with event editing |
 | Add event button (`hearthlike-fab-card`) | Floating "+" that creates a calendar event |
 | Calendar (`hearthlike-calendar-card`) | Day / Week / Month in a single card with the add button built in |
+| Dashboard (`hearthlike-dashboard-card`) | All-in-one wall display for a panel view: weather + clock, people badges, the calendar, and quick toggle buttons |
 
 ## Installation
 

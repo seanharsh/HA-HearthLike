@@ -3,6 +3,42 @@
 # so use a panel view (one card per view) or a sections/grid layout.
 title: HearthLike Example
 views:
+  # The whole wall display in one card: weather + clock, people badges, the calendar, quick buttons.
+  - title: Home
+    path: home
+    panel: true
+    cards:
+      - type: custom:hearthlike-dashboard-card
+        weather: weather.home
+        clock:
+          military: false
+        people:
+          - entity: person.alex
+            color: "#b82d3d"
+          - entity: person.sam
+            color: "#1badf8"
+        calendar:                # same options as hearthlike-calendar-card below
+          day:
+            visible_hours: 10
+            columns:
+              - name: Family
+                color: "#378ADD"
+                entities: [calendar.family]
+          week:
+            calendars:
+              - entity: calendar.family
+                color: "#378ADD"
+          month:
+            calendars:
+              - entity: calendar.family
+                color: "#378ADD"
+        buttons:
+          - entity: light.family_room
+          - entity: light.kitchen
+            name: Kitchen
+          - entity: switch.tv
+            show_state: true
+
   # All-in-one: Day / Weekly / Monthly tabs plus a floating "+" add-event button.
   - title: Calendar
     path: calendar
