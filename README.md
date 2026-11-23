@@ -7,7 +7,22 @@ quick add/edit/delete.
 
 - **Calendar views** — day, week and month, plus a combined card with an add-event button
 - **Edit in place** — add, edit and delete calendar events (including recurring ones) from the dashboard
-- **Visual editors** — the calendar cards can be configured from the dashboard UI
+- **All-in-one dashboard card** — weather and clock, people badges, the calendar and quick toggle buttons on one panel view
+- **Visual editors** — the cards can be configured from the dashboard UI, and the dashboard card accepts custom CSS
+
+## Screenshots
+
+The all-in-one dashboard card, with weather and clock, people badges, the calendar and quick buttons:
+
+![HearthLike dashboard card](docs/dashboard-card.png)
+
+The day, week and month cards on their own:
+
+![HearthLike day card](docs/day-card.png)
+
+![HearthLike week card](docs/week-card.png)
+
+![HearthLike month card](docs/month-card.png)
 
 ## Cards at a Glance
 
