@@ -365,8 +365,8 @@ class HearthlikeCalendarCard extends HTMLElement {
           height: 60px;
           border-radius: 50%;
           border: none;
-          background: var(--hearthlike-fab-color, #14b8a6);
-          color: #fff;
+          background: var(--hearthlike-fab-color, var(--primary-color, #14b8a6));
+          color: var(--hearthlike-fab-icon-color, var(--text-primary-color, #fff));
           font-size: 30px;
           line-height: 1;
           display: flex;
@@ -389,7 +389,7 @@ class HearthlikeCalendarCard extends HTMLElement {
         .af-actions { display:flex; justify-content:flex-end; gap:8px; padding:8px 0 4px; }
         .af-btn { font:inherit; font-size:14px; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }
         .af-btn-text { background:none; color:var(--primary-color, #14b8a6); }
-        .af-btn-filled { background:var(--hearthlike-fab-color, #14b8a6); color:#fff; }
+        .af-btn-filled { background:var(--hearthlike-fab-color, var(--primary-color, #14b8a6)); color:var(--hearthlike-fab-icon-color, var(--text-primary-color, #fff)); }
       </style>
       <ha-card>
         <div class="tab-bar">
@@ -402,7 +402,7 @@ class HearthlikeCalendarCard extends HTMLElement {
           <div class="pane" data-pane="week"></div>
           <div class="pane" data-pane="month"></div>
         </div>
-        <button class="fab" id="fab-btn" aria-label="Add event">+</button>
+        <button class="fab" id="fab-btn" aria-label="Add event"><svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>
       </ha-card>
     `;
     this._dayCard = document.createElement('hearthlike-day-card');

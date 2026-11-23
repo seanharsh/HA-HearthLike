@@ -37,6 +37,11 @@ _Screenshots will be added with the first release._
 | Calendar (`hearthlike-calendar-card`) | Day / Week / Month in a single card with the add button built in |
 | Dashboard (`hearthlike-dashboard-card`) | All-in-one wall display for a panel view: weather + clock, people badges, the calendar, and quick toggle buttons |
 
+## Add-event button colour
+
+The "+" button follows your theme's primary colour. Override it with `--hearthlike-fab-color` (button) and
+`--hearthlike-fab-icon-color` (the plus), for example from a theme or card-mod.
+
 ## Event icons
 
 Give a calendar a small icon that shows in front of its event titles in the day, week and month views. Set `icon`

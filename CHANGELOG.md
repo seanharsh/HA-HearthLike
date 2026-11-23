@@ -5,6 +5,7 @@
 ### Added
 - `hearthlike-dashboard-card`: all-in-one panel-view wall display (weather and clock, people badges, the calendar card, quick toggle buttons), with a visual editor.
 - `hearthlike-dashboard-card`: `weather_tap_action` (more-info by default, or navigate / URL / call a service / none), and reorder arrows for people and buttons in the editor.
+- Add-event button: centred plus icon, and its colour follows the HA theme (`--hearthlike-fab-color` / `--hearthlike-fab-icon-color` to override).
 - Day, week and month views: per-calendar `icon` (MDI icon, emoji, image or entity picture) shown before event titles.
 - `hearthlike-calendar-card`: Day / Weekly / Monthly tabs with a built-in add-event button and a visual editor.
 - `hearthlike-day-card`: per-person hourly day view with all-day row and now-line.
