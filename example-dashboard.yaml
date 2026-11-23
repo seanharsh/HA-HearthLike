@@ -53,6 +53,7 @@ views:
             - name: Family
               color: "#378ADD"
               entities: [calendar.family]
+              icon: mdi:home           # optional small icon before event titles (see README)
             - name: Kids
               color: "#E67E22"
               entities: [calendar.kids]

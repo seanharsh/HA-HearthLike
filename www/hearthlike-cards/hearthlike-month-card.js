@@ -210,6 +210,28 @@ class HearthlikeMonthCard extends HTMLElement {
     this._render();
     this._maybeFetch();
   }
+  _iconFor(entityId) {
+    const c = this._getCalendars().find((x) => x.entity === entityId);
+    return c && c.icon;
+  }
+
+  // Small icon shown before an event title. `icon` is an MDI name (mdi:soccer), an image URL or /local path,
+  // an entity id (its picture, else its icon), or any other text, which is shown as is (an emoji).
+  _iconHtml(icon) {
+    const v = icon == null ? '' : String(icon).trim();
+    if (!v) return '';
+    if (/^[a-z0-9_-]+:[a-z0-9_-]+$/i.test(v)) return `<ha-icon class="evicon" icon="${this._esc(v)}"></ha-icon>`;
+    if (/^(\/|https?:|data:image\/)/i.test(v)) return `<img class="evicon" src="${this._esc(v)}" alt="">`;
+    const st = /^[a-z_]+\.[a-z0-9_]+$/.test(v) && this._hass && this._hass.states && this._hass.states[v];
+    if (st) {
+      const a = st.attributes || {};
+      if (a.entity_picture) return `<img class="evicon evpic" src="${this._esc(a.entity_picture)}" alt="">`;
+      if (a.icon) return `<ha-icon class="evicon" icon="${this._esc(a.icon)}"></ha-icon>`;
+      return `<span class="evicon">${this._esc(String(a.friendly_name || v).slice(0, 1).toUpperCase())}</span>`;
+    }
+    return `<span class="evicon">${this._esc(v)}</span>`;
+  }
+
   _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -632,7 +654,7 @@ class HearthlikeMonthCard extends HTMLElement {
             return `
           <div class="mevent${isPastEvent ? ' past' : ''}" data-idx="${ridx}" style="background:${e.color}">
             <div class="mevent-meta">${this._esc(meta)}</div>
-            <div class="mevent-title">${this._esc(e.title)}</div>
+            <div class="mevent-title">${this._iconHtml(this._iconFor(e.entityId))}${this._esc(e.title)}</div>
           </div>`;
           })
           .join('');
@@ -666,6 +688,7 @@ class HearthlikeMonthCard extends HTMLElement {
         .day-events { flex:1 1 auto; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:clamp(4px, 0.42vmin, 6px); scrollbar-width:thin; }
         .mevent { flex:none; border-radius:3px; padding:clamp(4px, 0.5vmin, 6px); box-sizing:border-box; cursor:pointer; overflow:hidden; }
         .mevent-meta { font-size:clamp(11.9px, 1.3vmin, 17px); font-weight:500; color:rgba(255,255,255,0.85); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+        .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; }
         .mevent-title { font-size:clamp(14px, 1.5vmin, 20px); font-weight:800; color:#fff; line-height:1.2; white-space:normal; overflow-wrap:break-word; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; }
         .mevent.past { filter:brightness(0.55); }
         .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }
@@ -823,6 +846,7 @@ class HearthlikeMonthCardEditor extends HTMLElement {
         <ha-entity-picker class="hde-picker" data-idx="${idx}" allow-custom-entity></ha-entity-picker>
         <input class="hde-color" data-field="color" data-idx="${idx}" type="color" value="${cal.color || '#378ADD'}" />
         <button class="hde-remove" data-idx="${idx}" title="Remove calendar">&#10005;</button>
+        <input class="hde-icon" data-field="icon" data-idx="${idx}" type="text" placeholder="Icon (optional): mdi:soccer, emoji, image URL, or entity" value="${(cal.icon || '').replace(/"/g, '&quot;')}" />
       </div>`
       )
       .join('');
@@ -831,7 +855,8 @@ class HearthlikeMonthCardEditor extends HTMLElement {
       <style>
         .hde-wrap { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
         .hde-empty { font-size:13px; color:var(--secondary-text-color); }
-        .hde-row { display:flex; align-items:center; gap:8px; }
+        .hde-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+        .hde-icon { order:4; flex:1 1 100%; box-sizing:border-box; font:inherit; font-size:13px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
         .hde-row ha-entity-picker { flex:1; }
         .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }
         .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }

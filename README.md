@@ -37,6 +37,25 @@ _Screenshots will be added with the first release._
 | Calendar (`hearthlike-calendar-card`) | Day / Week / Month in a single card with the add button built in |
 | Dashboard (`hearthlike-dashboard-card`) | All-in-one wall display for a panel view: weather + clock, people badges, the calendar, and quick toggle buttons |
 
+## Event icons
+
+Give a calendar a small icon that shows in front of its event titles in the day, week and month views. Set `icon`
+on a day column or on a week/month calendar entry (also in the visual editors):
+
+```yaml
+columns:                      # day card; week and month use calendars: [{ entity, color, icon }]
+  - name: Hockey
+    color: "#fdb827"
+    entities: [calendar.hockey]
+    icon: mdi:hockey-puck       # an MDI icon
+  - name: Kids
+    color: "#2d7ff9"
+    entities: [calendar.kids]
+    icon: person.riley          # an entity: its picture (or its icon) is used
+```
+
+`icon` can also be an emoji (`🏒`) or an image (`/local/logo.png` or a full URL).
+
 ## Weather tap action
 
 Tapping the weather in `hearthlike-dashboard-card` opens the weather entity's more-info popup. Change that with

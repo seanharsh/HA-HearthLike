@@ -211,6 +211,28 @@ class HearthlikeWeekCard extends HTMLElement {
     this._maybeFetch();
   }
 
+  _iconFor(entityId) {
+    const c = this._getCalendars().find((x) => x.entity === entityId);
+    return c && c.icon;
+  }
+
+  // Small icon shown before an event title. `icon` is an MDI name (mdi:soccer), an image URL or /local path,
+  // an entity id (its picture, else its icon), or any other text, which is shown as is (an emoji).
+  _iconHtml(icon) {
+    const v = icon == null ? '' : String(icon).trim();
+    if (!v) return '';
+    if (/^[a-z0-9_-]+:[a-z0-9_-]+$/i.test(v)) return `<ha-icon class="evicon" icon="${this._esc(v)}"></ha-icon>`;
+    if (/^(\/|https?:|data:image\/)/i.test(v)) return `<img class="evicon" src="${this._esc(v)}" alt="">`;
+    const st = /^[a-z_]+\.[a-z0-9_]+$/.test(v) && this._hass && this._hass.states && this._hass.states[v];
+    if (st) {
+      const a = st.attributes || {};
+      if (a.entity_picture) return `<img class="evicon evpic" src="${this._esc(a.entity_picture)}" alt="">`;
+      if (a.icon) return `<ha-icon class="evicon" icon="${this._esc(a.icon)}"></ha-icon>`;
+      return `<span class="evicon">${this._esc(String(a.friendly_name || v).slice(0, 1).toUpperCase())}</span>`;
+    }
+    return `<span class="evicon">${this._esc(v)}</span>`;
+  }
+
   _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -897,7 +919,7 @@ class HearthlikeWeekCard extends HTMLElement {
         });
         return `
       <div class="allday-box${it.isPast ? ' past-day' : ''}" data-idx="${ridx}" style="top:${it.lane * (laneHeight + laneGap)}px;left:${left};width:${width};height:${laneHeight}px;background:${it.color}">
-        ${this._esc(it.title)}
+        ${this._iconHtml(this._iconFor(it.entityId))}${this._esc(it.title)}
       </div>`;
       })
       .join('');
@@ -959,7 +981,7 @@ class HearthlikeWeekCard extends HTMLElement {
             });
             return `
           <div class="event${isPastEvent ? ' past' : ''}" data-idx="${ridx}" style="top:${e.top}px;height:${e.height}px;left:calc(${e.leftPct}% + ${inset}px);width:calc(${e.widthPct}% - ${inset * 2}px);background:${e.color}">
-            <div class="event-title">${this._esc(e.title)}</div>
+            <div class="event-title">${this._iconHtml(this._iconFor(e.entityId))}${this._esc(e.title)}</div>
             <div class="event-time">${this._formatTime(e.startMin)} – ${this._formatTime(e.endMin)}</div>
           </div>`;
           })
@@ -1011,7 +1033,7 @@ class HearthlikeWeekCard extends HTMLElement {
         .col-header.past-day { opacity:0.3; }
         .col-body.past-day { filter:brightness(0.3); }
         .event.past { filter:brightness(0.5); }
-        .event, .allday-box { cursor:pointer; }
+        .event, .allday-box { cursor:pointer; } .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; }
         .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }
         .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
         .hd-row ha-icon { color:var(--primary-text-color); flex:none; width:20px; height:22px; }
@@ -1180,6 +1202,7 @@ class HearthlikeWeekCardEditor extends HTMLElement {
         <ha-entity-picker class="hde-picker" data-idx="${idx}" allow-custom-entity></ha-entity-picker>
         <input class="hde-color" data-field="color" data-idx="${idx}" type="color" value="${cal.color || '#378ADD'}" />
         <button class="hde-remove" data-idx="${idx}" title="Remove calendar">&#10005;</button>
+        <input class="hde-icon" data-field="icon" data-idx="${idx}" type="text" placeholder="Icon (optional): mdi:soccer, emoji, image URL, or entity" value="${(cal.icon || '').replace(/"/g, '&quot;')}" />
       </div>`
       )
       .join('');
@@ -1189,7 +1212,8 @@ class HearthlikeWeekCardEditor extends HTMLElement {
       <style>
         .hde-wrap { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
         .hde-empty { font-size:13px; color:var(--secondary-text-color); }
-        .hde-row { display:flex; align-items:center; gap:8px; }
+        .hde-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+        .hde-icon { order:4; flex:1 1 100%; box-sizing:border-box; font:inherit; font-size:13px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
         .hde-row ha-entity-picker { flex:1; }
         .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }
         .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }
