@@ -1976,7 +1976,7 @@ class HearthlikeDayCardEditor extends HTMLElement {
       t = e
         .map(
           (e, t) =>
-            `\n      <div class="hde-row" data-idx="${t}">\n        <div class="hde-row-top">\n          <input class="hde-name" data-field="name" data-idx="${t}" type="text" value="${(e.name || "").replace(/"/g, "&quot;")}" placeholder="Column name" />\n          <input class="hde-color" data-field="color" data-idx="${t}" type="color" value="${e.color || "#378ADD"}" />\n          <button class="hde-remove" data-idx="${t}" title="Remove column">&#10005;</button>\n        </div>\n        <ha-entity-picker\n          class="hde-picker"\n          data-idx="${t}"\n          allow-custom-entity\n        ></ha-entity-picker>\n      </div>`,
+            `\n      <div class="hde-row" data-idx="${t}">\n        <div class="hde-row-top">\n          <input class="hde-name" data-field="name" data-idx="${t}" type="text" value="${(e.name || "").replace(/"/g, "&quot;")}" placeholder="Column name" />\n          <input class="hde-color" data-field="color" data-idx="${t}" type="color" value="${e.color || "#378ADD"}" />\n          <button class="hde-remove" data-idx="${t}" title="Remove column">&#10005;</button>\n        </div>\n        <ha-selector class="hde-picker" data-idx="${t}"></ha-selector>\n      </div>`,
         )
         .join("");
     this.shadowRoot || this.attachShadow({ mode: "open" }),
@@ -1984,9 +1984,9 @@ class HearthlikeDayCardEditor extends HTMLElement {
       this.shadowRoot.querySelectorAll(".hde-picker").forEach((t) => {
         const n = parseInt(t.getAttribute("data-idx"), 10);
         (t.hass = this._hass),
-          (t.includeDomains = ["calendar"]),
+          // ha-entity-picker has no multi-select; ha-selector renders HA's multi-entity picker.
+          (t.selector = { entity: { multiple: !0, domain: "calendar" } }),
           (t.label = "Calendars for this column"),
-          (t.multiple = !0),
           (t.value = (e[n] && e[n].entities) || []),
           t.addEventListener("value-changed", (e) => {
             this._updateColumn(n, { entities: e.detail.value || [] });
