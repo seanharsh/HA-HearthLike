@@ -16,8 +16,8 @@
 //   military: false               # true for 24-hour time
 //   seconds: false
 // people:
-//   - entity: person.abby
-//     name: Abby                   # optional, defaults to the entity's friendly name
+//   - entity: person.riley
+//     name: Riley                   # optional, defaults to the entity's friendly name
 //     color: "#b82d3d"             # ring and name colour
 // calendar:                        # passed straight to hearthlike-calendar-card
 //   day: { columns: [...] }
@@ -30,9 +30,39 @@
 //     icon: mdi:lightbulb          # optional
 //     show_state: false            # optional, default false
 //
+// style: |                        # optional custom CSS, applied inside the card (wins over the built-in rules)
+//   .avatar { border-width: 5px; }
+//   .clock { color: orange; }
+//
+// Styling: the card's colours and sizes follow the active theme and can be changed three ways:
+//   - the --hearthlike-* CSS variables (from a theme, card-mod, or `style`): height, background, text-color,
+//     header-font-size, header-padding, people-gap, people-padding, avatar-size, avatar-font-size, ring-width,
+//     name-font-size, button-background, button-color, button-active-color, button-icon-size, button-padding
+//   - the `style:` option above, using the class names .header .weather .clock .people .person .avatar .badge
+//     .pname .cal .buttons .btn (.on/.off/.unavailable) .bname .bstate
+//   - ::part() selectors, for a stylesheet in the same tree as the card (root, header, weather, clock, people, person, avatar, badge, person-name,
+//     calendar, buttons, button, button-on/off/unavailable, button-icon, button-name, button-state)
+//
 // Use it on a view with `panel: true` so it can take the full height.
+// Everything above can be set from the dashboard's visual editor (General / People / Calendar / Buttons tabs).
 
 class HearthlikeDashboardCard extends HTMLElement {
+  static getConfigElement() {
+    return document.createElement('hearthlike-dashboard-card-editor');
+  }
+
+  static getStubConfig(hass) {
+    const first = (domain) => Object.keys((hass && hass.states) || {}).find((id) => id.startsWith(domain + '.'));
+    const weather = first('weather');
+    return {
+      ...(weather ? { weather } : {}),
+      clock: { military: false },
+      people: [],
+      buttons: [],
+      calendar: { day: { columns: [] }, week: { calendars: [] }, month: { calendars: [] }, fab: { calendars: [] } },
+    };
+  }
+
   setConfig(config) {
     if (!config) throw new Error('Invalid configuration');
     this._config = config;
@@ -79,47 +109,60 @@ class HearthlikeDashboardCard extends HTMLElement {
     this._calendar = null;
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; height: calc(100dvh - var(--header-height, 56px)); }
+        /* Every size and colour below can be overridden with the --hearthlike-* variables (set them from a theme,
+           card-mod, or the card's own "style" option), or restyle anything with "style". See the README. */
+        :host { display: block; height: var(--hearthlike-height, calc(100dvh - var(--header-height, 56px))); }
         .root { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; overflow: hidden;
-                background: var(--primary-background-color); color: var(--primary-text-color); }
+                background: var(--hearthlike-background, var(--primary-background-color));
+                color: var(--hearthlike-text-color, var(--primary-text-color)); }
         .header { display: flex; align-items: center; justify-content: space-between; flex: none;
-                  padding: clamp(4px, 0.8vmin, 12px) clamp(14px, 2.5vmin, 32px); }
-        .weather { display: flex; align-items: center; gap: 12px; font-size: clamp(24px, 5vmin, 48px); font-weight: 500; }
-        .weather ha-icon { --mdc-icon-size: clamp(24px, 5vmin, 48px); }
-        .clock { font-size: clamp(24px, 5vmin, 48px); font-weight: 700; font-variant-numeric: tabular-nums; }
-        .people { display: flex; justify-content: space-around; flex: none; gap: 8px;
-                  padding: clamp(6px, 1vmin, 16px) clamp(20px, 6.9vmin, 80px); }
-        .person { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
-        .avatar { position: relative; width: clamp(56px, 11vmin, 104px); height: clamp(56px, 11vmin, 104px);
-                  border-radius: 50%; border: 3px solid var(--ring, var(--primary-color)); box-sizing: border-box;
+                  font-size: var(--hearthlike-header-font-size, clamp(24px, 5vmin, 48px));
+                  padding: var(--hearthlike-header-padding, clamp(4px, 0.8vmin, 12px) clamp(14px, 2.5vmin, 32px)); }
+        .weather { display: flex; align-items: center; gap: 0.25em; font-weight: 500; line-height: 1.2; }
+        .weather ha-icon { --mdc-icon-size: 1em; display: flex; }
+        .clock { margin-left: auto; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+        .people { display: flex; justify-content: space-evenly; align-items: flex-start; flex: none;
+                  gap: var(--hearthlike-people-gap, 8px);
+                  padding: var(--hearthlike-people-padding, clamp(6px, 1vmin, 16px) clamp(12px, 4vmin, 80px)); }
+        .person { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; }
+        .avatar { position: relative; flex: none; box-sizing: border-box; border-radius: 50%;
+                  width: var(--hearthlike-avatar-size, clamp(56px, 11vmin, 104px));
+                  height: var(--hearthlike-avatar-size, clamp(56px, 11vmin, 104px));
+                  border: var(--hearthlike-ring-width, 3px) solid var(--ring, var(--primary-color));
                   background: var(--secondary-background-color); display: flex; align-items: center; justify-content: center;
-                  font-size: clamp(22px, 4.5vmin, 40px); font-weight: 600; }
+                  font-size: var(--hearthlike-avatar-font-size, clamp(22px, 4.5vmin, 40px)); font-weight: 600; line-height: 1; }
         .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
         .badge { position: absolute; top: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%;
                  display: flex; align-items: center; justify-content: center; color: #fff;
                  background: var(--badge, var(--secondary-text-color)); }
-        .badge ha-icon { --mdc-icon-size: 14px; }
-        .pname { font-size: clamp(14px, 2.2vmin, 22px); font-weight: 500; color: var(--ring, var(--primary-text-color)); }
+        .badge ha-icon { --mdc-icon-size: 14px; display: flex; }
+        .pname { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
+                 font-size: var(--hearthlike-name-font-size, clamp(14px, 2.2vmin, 22px)); font-weight: 500;
+                 color: var(--ring, var(--primary-text-color)); }
         .cal { position: relative; flex: 1; min-height: 0; }
-        .cal > * { position: absolute; inset: 0; }
-        .buttons { display: flex; flex: none; gap: 1px; }
-        .btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-               padding: 12px 4px; cursor: pointer; background: var(--card-background-color, var(--secondary-background-color));
-               border: 0; color: var(--primary-text-color); font: inherit; min-width: 0; }
+        .cal > * { position: absolute; inset: 0; display: block; }
+        .buttons { display: flex; align-items: stretch; flex: none; gap: 1px; overflow-x: auto; }
+        .btn { flex: 1 0 64px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px;
+               padding: var(--hearthlike-button-padding, 12px 4px); cursor: pointer; border: 0; font: inherit; min-width: 0;
+               background: var(--hearthlike-button-background, var(--card-background-color, var(--secondary-background-color)));
+               color: var(--hearthlike-button-color, var(--primary-text-color)); }
         .btn:active { filter: brightness(1.2); }
-        .btn ha-icon { --mdc-icon-size: 27px; }
-        .btn.on ha-icon { color: var(--state-light-active-color, #ffc107); }
+        .btn ha-icon { --mdc-icon-size: var(--hearthlike-button-icon-size, 27px); display: flex; }
+        .btn.on ha-icon { color: var(--hearthlike-button-active-color, var(--state-light-active-color, #ffc107)); }
         .btn.off, .btn.unavailable { color: var(--secondary-text-color); }
         .btn.unavailable { opacity: 0.6; }
-        .bname { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .bname { font-size: 14px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .bstate { font-size: 12px; color: var(--secondary-text-color); text-transform: capitalize; }
       </style>
-      <div class="root">
-        ${c.weather || c.clock ? '<div class="header"><div class="weather"></div><div class="clock"></div></div>' : ''}
-        ${Array.isArray(c.people) && c.people.length ? '<div class="people"></div>' : ''}
-        <div class="cal"></div>
-        ${Array.isArray(c.buttons) && c.buttons.length ? '<div class="buttons"></div>' : ''}
+      <style id="user-style"></style>
+      <div class="root" part="root">
+        ${c.weather || c.clock ? `<div class="header" part="header">${c.weather ? '<div class="weather" part="weather"></div>' : ''}${c.clock ? '<div class="clock" part="clock"></div>' : ''}</div>` : ''}
+        ${Array.isArray(c.people) && c.people.length ? '<div class="people" part="people"></div>' : ''}
+        <div class="cal" part="calendar"></div>
+        ${Array.isArray(c.buttons) && c.buttons.length ? '<div class="buttons" part="buttons"></div>' : ''}
       </div>`;
+    // Custom CSS from the card config, appended after the built-in rules so it wins.
+    this.shadowRoot.getElementById('user-style').textContent = typeof c.style === 'string' ? c.style : '';
     const root = this.shadowRoot;
     this._elWeather = root.querySelector('.weather');
     this._elClock = root.querySelector('.clock');
@@ -202,25 +245,25 @@ class HearthlikeDashboardCard extends HTMLElement {
 
   _updatePeople() {
     if (!this._elPeople) return;
-    const html = this._config.people.map((p) => {
+    const html = this._config.people.filter((p) => p.entity).map((p) => {
       const st = this._hass.states[p.entity];
       const name = p.name || (st && st.attributes.friendly_name) || p.entity;
       const pic = st && st.attributes.entity_picture;
       const state = st ? st.state : 'unknown';
       let badge = '';
-      if (state === 'home') badge = '<span class="badge" style="--badge:var(--success-color, #43a047)"><ha-icon icon="mdi:home"></ha-icon></span>';
-      else if (state === 'not_home') badge = '<span class="badge" style="--badge:var(--warning-color, #f57c00)"><ha-icon icon="mdi:home-export-outline"></ha-icon></span>';
-      else if (state !== 'unknown' && state !== 'unavailable') badge = '<span class="badge" style="--badge:var(--info-color, #039be5)"><ha-icon icon="mdi:map-marker"></ha-icon></span>';
+      if (state === 'home') badge = '<span class="badge" part="badge" style="--badge:var(--success-color, #43a047)"><ha-icon icon="mdi:home"></ha-icon></span>';
+      else if (state === 'not_home') badge = '<span class="badge" part="badge" style="--badge:var(--warning-color, #f57c00)"><ha-icon icon="mdi:home-export-outline"></ha-icon></span>';
+      else if (state !== 'unknown' && state !== 'unavailable') badge = '<span class="badge" part="badge" style="--badge:var(--info-color, #039be5)"><ha-icon icon="mdi:map-marker"></ha-icon></span>';
       const face = pic ? `<img src="${this._esc(pic)}" alt="">` : this._esc(String(name).slice(0, 1).toUpperCase());
       const ring = p.color ? `--ring:${this._esc(p.color)};` : '';
-      return `<div class="person" style="${ring}"><div class="avatar">${face}${badge}</div><div class="pname">${this._esc(name)}</div></div>`;
+      return `<div class="person" part="person" style="${ring}"><div class="avatar" part="avatar">${face}${badge}</div><div class="pname" part="person-name">${this._esc(name)}</div></div>`;
     }).join('');
     this._set('people', this._elPeople, html);
   }
 
   _updateButtons() {
     if (!this._elButtons) return;
-    const html = this._config.buttons.map((b) => {
+    const html = this._config.buttons.filter((b) => b.entity).map((b) => {
       const st = this._hass.states[b.entity];
       const state = st ? st.state : 'unavailable';
       const name = b.name || (st && st.attributes.friendly_name) || b.entity;
@@ -228,13 +271,234 @@ class HearthlikeDashboardCard extends HTMLElement {
       const fallback = { light: 'mdi:lightbulb', switch: 'mdi:toggle-switch', input_boolean: 'mdi:toggle-switch', fan: 'mdi:fan' }[domain] || 'mdi:gesture-tap';
       const icon = state === 'unavailable' ? 'mdi:help-circle-outline' : (b.icon || (st && st.attributes.icon) || fallback);
       const cls = state === 'on' ? 'on' : state === 'unavailable' ? 'unavailable' : 'off';
-      return `<button class="btn ${cls}" data-entity="${this._esc(b.entity)}"><ha-icon icon="${this._esc(icon)}"></ha-icon>`
-        + `<span class="bname">${this._esc(name)}</span>${b.show_state ? `<span class="bstate">${this._esc(state)}</span>` : ''}</button>`;
+      return `<button class="btn ${cls}" part="button button-${cls}" data-entity="${this._esc(b.entity)}"><ha-icon icon="${this._esc(icon)}" part="button-icon"></ha-icon>`
+        + `<span class="bname" part="button-name">${this._esc(name)}</span>${b.show_state ? `<span class="bstate" part="button-state">${this._esc(state)}</span>` : ''}</button>`;
     }).join('');
     this._set('buttons', this._elButtons, html);
   }
 }
 if (!customElements.get('hearthlike-dashboard-card')) customElements.define('hearthlike-dashboard-card', HearthlikeDashboardCard);
+
+class HearthlikeDashboardCardEditor extends HTMLElement {
+  setConfig(config) {
+    const next = config || {};
+    // HA echoes our own config-changed back through setConfig; skip it so typing keeps its focus.
+    if (this._built && JSON.stringify(next) === JSON.stringify(this._config)) return;
+    this._config = next;
+    if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
+    this._activeTab = this._activeTab || 'general';
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (this._calEditor) this._calEditor.hass = hass;
+    this.shadowRoot?.querySelectorAll('ha-entity-picker').forEach((el) => { el.hass = hass; });
+  }
+
+  connectedCallback() {
+    if (this._config) this._render();
+  }
+
+  _emit() {
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this._config }, bubbles: true, composed: true }));
+  }
+
+  _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+  }
+
+  // Set or (when value is empty) remove a top-level key.
+  _setKey(key, value) {
+    const cfg = { ...this._config };
+    if (value === '' || value == null) delete cfg[key];
+    else cfg[key] = value;
+    this._config = cfg;
+    this._emit();
+  }
+
+  _setItem(key, idx, field, value) {
+    const list = (this._config[key] || []).map((it) => ({ ...it }));
+    if (value === '' || value === false || value == null) delete list[idx][field];
+    else list[idx][field] = value;
+    this._config = { ...this._config, [key]: list };
+    this._emit();
+  }
+
+  _addItem(key, item) {
+    this._config = { ...this._config, [key]: [...(this._config[key] || []), item] };
+    this._emit();
+    this._renderList(key);
+  }
+
+  _removeItem(key, idx) {
+    const list = (this._config[key] || []).slice();
+    list.splice(idx, 1);
+    this._config = { ...this._config, [key]: list };
+    this._emit();
+    this._renderList(key);
+  }
+
+  _ensureBuilt() {
+    if (this._built) return;
+    this._built = true;
+    this.shadowRoot.innerHTML = `
+      <style>
+        .tab-bar { display: flex; margin-bottom: 12px; border-bottom: 1px solid var(--divider-color, rgba(0,0,0,.12)); }
+        .tab { flex: 1; text-align: center; padding: 8px 0; cursor: pointer; font-weight: 500; color: var(--secondary-text-color);
+               border-bottom: 2px solid transparent; user-select: none; }
+        .tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+        .pane { display: none; }
+        .pane.active { display: block; }
+        .wrap { display: flex; flex-direction: column; gap: 12px; padding: 8px 0; }
+        .hint { font-size: 12px; color: var(--secondary-text-color); }
+        .empty { font-size: 13px; color: var(--secondary-text-color); }
+        .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px; border: 1px solid var(--divider-color); border-radius: 8px; }
+        .row ha-entity-picker { flex: 1 1 100%; min-width: 0; }
+        .row input[type=text] { flex: 1 1 120px; min-width: 0; font: inherit; padding: 8px; border-radius: 6px;
+                                border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); }
+        .row input[type=color] { width: 40px; height: 36px; padding: 0; border: 1px solid var(--divider-color); border-radius: 6px; background: none; }
+        .row label.chk { display: flex; align-items: center; gap: 4px; font-size: 14px; color: var(--primary-text-color); }
+        .remove { margin-left: auto; background: none; border: none; color: var(--secondary-text-color); font-size: 16px; cursor: pointer; padding: 4px 8px; }
+        .remove:hover { color: #e24b4a; }
+        .add { align-self: flex-start; font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 6px;
+               border: 1px solid var(--divider-color); background: none; color: var(--primary-color, #14b8a6); cursor: pointer; }
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        textarea { font: 13px/1.4 monospace; padding: 8px; border-radius: 6px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); resize: vertical; box-sizing: border-box; width: 100%; }
+        .field label.chk { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+      </style>
+      <div class="tab-bar">
+        <div class="tab" data-tab="general">General</div>
+        <div class="tab" data-tab="people">People</div>
+        <div class="tab" data-tab="calendar">Calendar</div>
+        <div class="tab" data-tab="buttons">Buttons</div>
+      </div>
+      <div class="pane" data-pane="general"></div>
+      <div class="pane" data-pane="people"></div>
+      <div class="pane" data-pane="calendar"></div>
+      <div class="pane" data-pane="buttons"></div>`;
+    this.shadowRoot.querySelectorAll('.tab').forEach((el) => {
+      el.addEventListener('click', () => this._setTab(el.dataset.tab));
+    });
+    const mountCal = () => {
+      this._calEditor = document.createElement('hearthlike-calendar-card-editor');
+      this._calEditor.addEventListener('config-changed', (ev) => {
+        ev.stopPropagation();
+        const cal = { ...ev.detail.config };
+        delete cal.type;
+        this._config = { ...this._config, calendar: cal };
+        this._emit();
+      });
+      this.shadowRoot.querySelector('[data-pane="calendar"]').appendChild(this._calEditor);
+      if (this._hass) this._calEditor.hass = this._hass;
+      this._calEditor.setConfig({ type: 'custom:hearthlike-calendar-card', ...(this._config.calendar || {}) });
+    };
+    if (customElements.get('hearthlike-calendar-card-editor')) mountCal();
+    else customElements.whenDefined('hearthlike-calendar-card-editor').then(mountCal);
+  }
+
+  // Pickers are configured before they are attached: ha-entity-picker renders from this.hass
+  // as soon as it connects, so setting it afterwards can leave an empty, dead picker.
+  _picker(domains, label, value, onChange) {
+    const el = document.createElement('ha-entity-picker');
+    el.hass = this._hass;
+    if (domains) el.includeDomains = domains;
+    el.label = label;
+    el.value = value || '';
+    el.allowCustomEntity = true;
+    el.addEventListener('value-changed', (ev) => onChange(ev.detail.value || ''));
+    return el;
+  }
+
+  _renderGeneral() {
+    const pane = this.shadowRoot.querySelector('[data-pane="general"]');
+    const clock = this._config.clock;
+    pane.innerHTML = `
+      <div class="wrap">
+        <div class="field">
+          <div id="weather-slot"></div>
+          <div class="hint">Shows its temperature and condition icon in the header. Leave empty to hide the weather.</div>
+        </div>
+        <div class="field">
+          <label class="chk"><input type="checkbox" id="clock-on" ${clock ? 'checked' : ''}> Show clock</label>
+          <label class="chk"><input type="checkbox" id="clock-mil" ${clock && clock.military ? 'checked' : ''} ${clock ? '' : 'disabled'}> 24-hour time</label>
+          <label class="chk"><input type="checkbox" id="clock-sec" ${clock && clock.seconds ? 'checked' : ''} ${clock ? '' : 'disabled'}> Show seconds</label>
+        </div>
+        <div class="field">
+          <label for="css">Custom CSS (optional)</label>
+          <textarea id="css" rows="6" spellcheck="false" placeholder=".avatar { border-width: 5px; }&#10;.clock { color: orange; }">${this._esc(this._config.style || '')}</textarea>
+          <div class="hint">Applied inside the card. Classes: .header .weather .clock .people .person .avatar .badge .pname .buttons .btn .bname. Variables: --hearthlike-avatar-size, --hearthlike-ring-width, --hearthlike-background and more (see the README).</div>
+        </div>
+        <div class="hint">Use this card on a view set to Panel mode so it can fill the screen.</div>
+      </div>`;
+    pane.querySelector('#css').addEventListener('input', (ev) => this._setKey('style', ev.target.value.trim() ? ev.target.value : ''));
+    pane.querySelector('#weather-slot').replaceWith(this._picker(['weather'], 'Weather entity', this._config.weather, (v) => this._setKey('weather', v)));
+    const setClock = () => {
+      const on = pane.querySelector('#clock-on').checked;
+      const clockCfg = on ? {
+        military: pane.querySelector('#clock-mil').checked,
+        seconds: pane.querySelector('#clock-sec').checked,
+      } : '';
+      pane.querySelector('#clock-mil').disabled = !on;
+      pane.querySelector('#clock-sec').disabled = !on;
+      this._setKey('clock', clockCfg);
+    };
+    pane.querySelectorAll('input[type=checkbox]').forEach((el) => el.addEventListener('change', setClock));
+  }
+
+  _renderList(key) {
+    const pane = this.shadowRoot.querySelector(`[data-pane="${key}"]`);
+    const items = this._config[key] || [];
+    const people = key === 'people';
+    const rows = items.map((it, idx) => `
+      <div class="row" data-idx="${idx}">
+        <div class="picker-slot" data-idx="${idx}"></div>
+        <input type="text" class="f-name" data-idx="${idx}" placeholder="Name (optional)" value="${this._esc(it.name || '')}">
+        ${people
+          ? `<input type="color" class="f-color" data-idx="${idx}" title="Ring and name colour" value="${this._esc(/^#[0-9a-f]{6}$/i.test(it.color || '') ? it.color : '#378add')}">`
+          : `<input type="text" class="f-icon" data-idx="${idx}" placeholder="Icon, e.g. mdi:lightbulb" value="${this._esc(it.icon || '')}">
+             <label class="chk"><input type="checkbox" class="f-state" data-idx="${idx}" ${it.show_state ? 'checked' : ''}> Show state</label>`}
+        <button class="remove" data-idx="${idx}" title="Remove">&#10005;</button>
+      </div>`).join('');
+    pane.innerHTML = `
+      <div class="wrap">
+        <div class="hint">${people
+          ? 'Badges shown under the header: photo, home/away indicator and name.'
+          : 'Tiles along the bottom. Tapping one toggles the entity (lights, switches, ...).'}</div>
+        ${items.length ? rows : `<div class="empty">${people ? 'No people yet.' : 'No buttons yet.'}</div>`}
+        <button class="add">+ Add ${people ? 'person' : 'button'}</button>
+      </div>`;
+    pane.querySelectorAll('.picker-slot').forEach((slot) => {
+      const idx = Number(slot.dataset.idx);
+      slot.replaceWith(this._picker(people ? ['person'] : null, people ? 'Person' : 'Entity', items[idx].entity,
+        (v) => this._setItem(key, idx, 'entity', v)));
+    });
+    pane.querySelectorAll('.f-name').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'name', el.value.trim())));
+    pane.querySelectorAll('.f-color').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'color', el.value)));
+    pane.querySelectorAll('.f-icon').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'icon', el.value.trim())));
+    pane.querySelectorAll('.f-state').forEach((el) => el.addEventListener('change', () => this._setItem(key, Number(el.dataset.idx), 'show_state', el.checked)));
+    pane.querySelectorAll('.remove').forEach((el) => el.addEventListener('click', () => this._removeItem(key, Number(el.dataset.idx))));
+    pane.querySelector('.add').addEventListener('click', () => this._addItem(key, { entity: '' }));
+  }
+
+  _render() {
+    this._ensureBuilt();
+    this._renderGeneral();
+    this._renderList('people');
+    this._renderList('buttons');
+    if (this._calEditor) this._calEditor.setConfig({ type: 'custom:hearthlike-calendar-card', ...(this._config.calendar || {}) });
+    this._setTab(this._activeTab);
+  }
+
+  _setTab(tab) {
+    this._activeTab = tab;
+    this.shadowRoot.querySelectorAll('.tab').forEach((el) => el.classList.toggle('active', el.dataset.tab === tab));
+    this.shadowRoot.querySelectorAll('.pane').forEach((el) => el.classList.toggle('active', el.dataset.pane === tab));
+  }
+}
+if (!customElements.get('hearthlike-dashboard-card-editor')) customElements.define('hearthlike-dashboard-card-editor', HearthlikeDashboardCardEditor);
 
 window.customCards = window.customCards || [];
 if (!window.customCards.some((c) => c.type === 'hearthlike-dashboard-card'))

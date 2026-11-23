@@ -326,7 +326,7 @@ class HearthlikeCalendarCard extends HTMLElement {
         .tab-bar {
           display: flex;
           flex: 0 0 auto;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+          border-bottom: 1px solid var(--divider-color, rgba(255, 255, 255, 0.12));
         }
         .tab {
           flex: 1;
@@ -335,13 +335,13 @@ class HearthlikeCalendarCard extends HTMLElement {
           font-size: clamp(11px, 1.3vmin, 15px);
           letter-spacing: 0.05em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.55);
+          color: var(--secondary-text-color, rgba(255, 255, 255, 0.55));
           cursor: pointer;
           border-bottom: 2px solid transparent;
           user-select: none;
         }
         .tab.active {
-          color: #fff;
+          color: var(--primary-text-color, #fff);
           border-bottom-color: var(--primary-color, #03a9f4);
         }
         .panes {

@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- `hearthlike-dashboard-card`: all-in-one panel-view wall display (weather and clock, people badges, the calendar card, quick toggle buttons).
+- `hearthlike-dashboard-card`: all-in-one panel-view wall display (weather and clock, people badges, the calendar card, quick toggle buttons), with a visual editor.
 - `hearthlike-calendar-card`: Day / Weekly / Monthly tabs with a built-in add-event button and a visual editor.
 - `hearthlike-day-card`: per-person hourly day view with all-day row and now-line.
 - `hearthlike-week-card`: weekly hourly grid with overlapping-event layout.

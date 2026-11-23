@@ -22,6 +22,35 @@ _Screenshots will be added with the first release._
 | Calendar (`hearthlike-calendar-card`) | Day / Week / Month in a single card with the add button built in |
 | Dashboard (`hearthlike-dashboard-card`) | All-in-one wall display for a panel view: weather + clock, people badges, the calendar, and quick toggle buttons |
 
+## Styling the dashboard card
+
+`hearthlike-dashboard-card` follows your theme out of the box. To change it, use any of these:
+
+- **CSS variables** (from a theme, card-mod, or the card's `style` option):
+  `--hearthlike-height`, `--hearthlike-background`, `--hearthlike-text-color`, `--hearthlike-header-font-size`,
+  `--hearthlike-header-padding`, `--hearthlike-people-gap`, `--hearthlike-people-padding`, `--hearthlike-avatar-size`,
+  `--hearthlike-avatar-font-size`, `--hearthlike-ring-width`, `--hearthlike-name-font-size`,
+  `--hearthlike-button-background`, `--hearthlike-button-color`, `--hearthlike-button-active-color`,
+  `--hearthlike-button-icon-size`, `--hearthlike-button-padding`.
+- **The `style` option**: your CSS is applied inside the card and wins over the built-in rules. It is also
+  in the visual editor (General tab).
+
+  ```yaml
+  type: custom:hearthlike-dashboard-card
+  style: |
+    :host { --hearthlike-avatar-size: 120px; }
+    .clock { color: orange; }
+    .btn.on ha-icon { color: hotpink; }
+  ```
+
+  Classes: `.header .weather .clock .people .person .avatar .badge .pname .cal .buttons .btn` (with
+  `.on`, `.off` or `.unavailable`) `.bname .bstate`.
+- **`::part()`** (for a stylesheet in the same tree as the card, which Home Assistant's own shadow DOM usually prevents; the `style` option is the reliable way): `root`, `header`, `weather`, `clock`, `people`, `person`, `avatar`, `badge`,
+  `person-name`, `calendar`, `buttons`, `button`, `button-on` / `button-off` / `button-unavailable`,
+  `button-icon`, `button-name`, `button-state`.
+
+The CSS variables also work when set from card-mod or a theme, since they inherit into the card.
+
 ## Installation
 
 ### Via HACS
