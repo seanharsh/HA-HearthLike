@@ -10,6 +10,9 @@ views:
     cards:
       - type: custom:hearthlike-dashboard-card
         weather: weather.home
+        weather_tap_action:      # optional; default is the entity's more-info popup
+          action: navigate       # more-info | navigate | url | call-service | none
+          navigation_path: /lovelace/forecast
         clock:
           military: false
         people:

@@ -37,6 +37,22 @@ _Screenshots will be added with the first release._
 | Calendar (`hearthlike-calendar-card`) | Day / Week / Month in a single card with the add button built in |
 | Dashboard (`hearthlike-dashboard-card`) | All-in-one wall display for a panel view: weather + clock, people badges, the calendar, and quick toggle buttons |
 
+## Weather tap action
+
+Tapping the weather in `hearthlike-dashboard-card` opens the weather entity's more-info popup. Change that with
+`weather_tap_action` (also in the visual editor, General tab):
+
+```yaml
+type: custom:hearthlike-dashboard-card
+weather: weather.home
+weather_tap_action:
+  action: navigate              # more-info (default) | navigate | url | call-service | none
+  navigation_path: /lovelace/forecast
+```
+
+`url` takes `url_path` (and `new_tab: false` to stay in the same tab); `call-service` takes `service`
+(`domain.service`) and optional `service_data` and `target`.
+
 ## Styling the dashboard card
 
 `hearthlike-dashboard-card` follows your theme out of the box. To change it, use any of these:

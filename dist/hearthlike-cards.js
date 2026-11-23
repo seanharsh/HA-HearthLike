@@ -697,6 +697,11 @@ if (!window.customCards.some((c) => c.type === 'hearthlike-calendar-card'))
 //
 // type: custom:hearthlike-dashboard-card
 // weather: weather.home            # entity; shows its temperature and condition icon
+// weather_tap_action:              # optional; what tapping the weather does (default: open the entity's more-info popup)
+//   action: more-info              # more-info | navigate | url | call-service | none
+//   navigation_path: /lovelace/forecast   # for navigate
+//   url_path: https://example.com        # for url
+//   service: script.turn_on              # for call-service, with optional service_data: {...}
 // clock:
 //   military: false               # true for 24-hour time
 //   seconds: false
@@ -804,6 +809,7 @@ class HearthlikeDashboardCard extends HTMLElement {
                   font-size: var(--hearthlike-header-font-size, clamp(24px, 5vmin, 48px));
                   padding: var(--hearthlike-header-padding, clamp(4px, 0.8vmin, 12px) clamp(14px, 2.5vmin, 32px)); }
         .weather { display: flex; align-items: center; gap: 0.25em; font-weight: 500; line-height: 1.2; }
+        .weather.tappable { cursor: pointer; }
         .weather ha-icon { --mdc-icon-size: 1em; display: flex; }
         .clock { margin-left: auto; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
         .people { display: flex; justify-content: space-evenly; align-items: flex-start; flex: none;
@@ -850,6 +856,11 @@ class HearthlikeDashboardCard extends HTMLElement {
     this.shadowRoot.getElementById('user-style').textContent = typeof c.style === 'string' ? c.style : '';
     const root = this.shadowRoot;
     this._elWeather = root.querySelector('.weather');
+    if (this._elWeather) {
+      const act = (c.weather_tap_action && c.weather_tap_action.action) || 'more-info';
+      this._elWeather.classList.toggle('tappable', act !== 'none');
+      this._elWeather.addEventListener('click', () => this._weatherTap());
+    }
     this._elClock = root.querySelector('.clock');
     this._elPeople = root.querySelector('.people');
     this._elButtons = root.querySelector('.buttons');
@@ -863,6 +874,26 @@ class HearthlikeDashboardCard extends HTMLElement {
     if (c.calendar) this._mountCalendar(root.querySelector('.cal'));
     this._startClock();
     this._update();
+  }
+
+  // Runs the configured weather tap action; the default opens the weather entity's more-info popup.
+  _weatherTap() {
+    const a = this._config.weather_tap_action || {};
+    const action = a.action || 'more-info';
+    if (action === 'none') return;
+    if (action === 'more-info') {
+      const entityId = a.entity || this._config.weather;
+      if (entityId) this.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId } }));
+    } else if (action === 'navigate') {
+      if (!a.navigation_path) return;
+      history.pushState(null, '', a.navigation_path);
+      window.dispatchEvent(new CustomEvent('location-changed', { detail: { replace: false } }));
+    } else if (action === 'url') {
+      if (a.url_path) window.open(a.url_path, a.new_tab === false ? '_self' : '_blank');
+    } else if (action === 'call-service') {
+      const [domain, service] = String(a.service || '').split('.');
+      if (domain && service && this._hass) this._hass.callService(domain, service, a.service_data || a.data || {}, a.target);
+    }
   }
 
   _mountCalendar(host) {
@@ -1065,6 +1096,8 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
         .field { display: flex; flex-direction: column; gap: 6px; }
         textarea { font: 13px/1.4 monospace; padding: 8px; border-radius: 6px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); resize: vertical; box-sizing: border-box; width: 100%; }
         .field label.chk { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+        .field select, .field input[type=text] { font: inherit; padding: 8px; border-radius: 6px; border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); box-sizing: border-box; width: 100%; }
+        .field .bad { border-color: #e24b4a; }
       </style>
       <div class="tab-bar">
         <div class="tab" data-tab="general">General</div>
@@ -1112,11 +1145,23 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
   _renderGeneral() {
     const pane = this.shadowRoot.querySelector('[data-pane="general"]');
     const clock = this._config.clock;
+    const tap = this._config.weather_tap_action || {};
     pane.innerHTML = `
       <div class="wrap">
         <div class="field">
           <div id="weather-slot"></div>
           <div class="hint">Shows its temperature and condition icon in the header. Leave empty to hide the weather.</div>
+        </div>
+        <div class="field">
+          <label for="wta-action">When the weather is tapped</label>
+          <select id="wta-action">
+            ${[['more-info', 'Open the entity popup (default)'], ['navigate', 'Go to a dashboard path'], ['url', 'Open a URL'], ['call-service', 'Call a service'], ['none', 'Do nothing']]
+              .map(([v, l]) => `<option value="${v}" ${tap.action === v || (!tap.action && v === 'more-info') ? 'selected' : ''}>${l}</option>`).join('')}
+          </select>
+          <input type="text" id="wta-path" placeholder="/lovelace/forecast" value="${this._esc(tap.navigation_path || '')}">
+          <input type="text" id="wta-url" placeholder="https://example.com" value="${this._esc(tap.url_path || '')}">
+          <input type="text" id="wta-service" placeholder="domain.service, e.g. script.turn_on" value="${this._esc(tap.service || '')}">
+          <textarea id="wta-data" rows="3" spellcheck="false" placeholder='Service data as JSON, e.g. {"entity_id": "script.example"}'>${this._esc(tap.service_data ? JSON.stringify(tap.service_data) : '')}</textarea>
         </div>
         <div class="field">
           <label class="chk"><input type="checkbox" id="clock-on" ${clock ? 'checked' : ''}> Show clock</label>
@@ -1132,6 +1177,32 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
       </div>`;
     pane.querySelector('#css').addEventListener('input', (ev) => this._setKey('style', ev.target.value.trim() ? ev.target.value : ''));
     pane.querySelector('#weather-slot').replaceWith(this._picker(['weather'], 'Weather entity', this._config.weather, (v) => this._setKey('weather', v)));
+    const setTapVisibility = () => {
+      const act = pane.querySelector('#wta-action').value;
+      const show = { path: act === 'navigate', url: act === 'url', service: act === 'call-service', data: act === 'call-service' };
+      Object.entries(show).forEach(([k, v]) => { pane.querySelector('#wta-' + k).style.display = v ? '' : 'none'; });
+    };
+    const setTap = () => {
+      setTapVisibility();
+      const act = pane.querySelector('#wta-action').value;
+      let cfg = '';
+      if (act === 'none') cfg = { action: 'none' };
+      else if (act === 'navigate') cfg = { action: 'navigate', navigation_path: pane.querySelector('#wta-path').value.trim() };
+      else if (act === 'url') cfg = { action: 'url', url_path: pane.querySelector('#wta-url').value.trim() };
+      else if (act === 'call-service') {
+        cfg = { action: 'call-service', service: pane.querySelector('#wta-service').value.trim() };
+        const dataEl = pane.querySelector('#wta-data');
+        const raw = dataEl.value.trim();
+        dataEl.classList.remove('bad');
+        if (raw) {
+          try { cfg.service_data = JSON.parse(raw); } catch (e) { dataEl.classList.add('bad'); }
+        }
+      }
+      this._setKey('weather_tap_action', cfg);
+    };
+    pane.querySelector('#wta-action').addEventListener('change', setTap);
+    ['#wta-path', '#wta-url', '#wta-service', '#wta-data'].forEach((sel) => pane.querySelector(sel).addEventListener('input', setTap));
+    setTapVisibility();
     const setClock = () => {
       const on = pane.querySelector('#clock-on').checked;
       const clockCfg = on ? {
