@@ -333,6 +333,16 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
     this._renderList(key);
   }
 
+  _moveItem(key, idx, delta) {
+    const list = (this._config[key] || []).slice();
+    const to = idx + delta;
+    if (to < 0 || to >= list.length) return;
+    [list[idx], list[to]] = [list[to], list[idx]];
+    this._config = { ...this._config, [key]: list };
+    this._emit();
+    this._renderList(key);
+  }
+
   _removeItem(key, idx) {
     const list = (this._config[key] || []).slice();
     list.splice(idx, 1);
@@ -361,7 +371,9 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
                                 border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); }
         .row input[type=color] { width: 40px; height: 36px; padding: 0; border: 1px solid var(--divider-color); border-radius: 6px; background: none; }
         .row label.chk { display: flex; align-items: center; gap: 4px; font-size: 14px; color: var(--primary-text-color); }
-        .remove { margin-left: auto; background: none; border: none; color: var(--secondary-text-color); font-size: 16px; cursor: pointer; padding: 4px 8px; }
+        .actions { margin-left: auto; display: flex; align-items: center; }
+        .move:disabled { opacity: 0.3; cursor: default; }
+        .remove, .move { background: none; border: none; color: var(--secondary-text-color); font-size: 16px; cursor: pointer; padding: 4px 8px; }
         .remove:hover { color: #e24b4a; }
         .add { align-self: flex-start; font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 6px;
                border: 1px solid var(--divider-color); background: none; color: var(--primary-color, #14b8a6); cursor: pointer; }
@@ -460,7 +472,11 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
           ? `<input type="color" class="f-color" data-idx="${idx}" title="Ring and name colour" value="${this._esc(/^#[0-9a-f]{6}$/i.test(it.color || '') ? it.color : '#378add')}">`
           : `<input type="text" class="f-icon" data-idx="${idx}" placeholder="Icon, e.g. mdi:lightbulb" value="${this._esc(it.icon || '')}">
              <label class="chk"><input type="checkbox" class="f-state" data-idx="${idx}" ${it.show_state ? 'checked' : ''}> Show state</label>`}
-        <button class="remove" data-idx="${idx}" title="Remove">&#10005;</button>
+        <span class="actions">
+          <button class="move move-up" data-idx="${idx}" title="Move up" ${idx === 0 ? 'disabled' : ''}>&#9650;</button>
+          <button class="move move-down" data-idx="${idx}" title="Move down" ${idx === items.length - 1 ? 'disabled' : ''}>&#9660;</button>
+          <button class="remove" data-idx="${idx}" title="Remove">&#10005;</button>
+        </span>
       </div>`).join('');
     pane.innerHTML = `
       <div class="wrap">
@@ -479,6 +495,8 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
     pane.querySelectorAll('.f-color').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'color', el.value)));
     pane.querySelectorAll('.f-icon').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'icon', el.value.trim())));
     pane.querySelectorAll('.f-state').forEach((el) => el.addEventListener('change', () => this._setItem(key, Number(el.dataset.idx), 'show_state', el.checked)));
+    pane.querySelectorAll('.move-up').forEach((el) => el.addEventListener('click', () => this._moveItem(key, Number(el.dataset.idx), -1)));
+    pane.querySelectorAll('.move-down').forEach((el) => el.addEventListener('click', () => this._moveItem(key, Number(el.dataset.idx), 1)));
     pane.querySelectorAll('.remove').forEach((el) => el.addEventListener('click', () => this._removeItem(key, Number(el.dataset.idx))));
     pane.querySelector('.add').addEventListener('click', () => this._addItem(key, { entity: '' }));
   }
