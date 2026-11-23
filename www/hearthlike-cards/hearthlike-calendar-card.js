@@ -491,6 +491,16 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
     this._emitChange();
   }
 
+  _moveFabCalendar(idx, delta) {
+    const calendars = ((this._config.fab && this._config.fab.calendars) || []).slice();
+    const to = idx + delta;
+    if (to < 0 || to >= calendars.length) return;
+    [calendars[idx], calendars[to]] = [calendars[to], calendars[idx]];
+    this._config = { ...this._config, fab: { ...this._config.fab, calendars } };
+    this._emitChange();
+    this._renderFabPane();
+  }
+
   _addFabCalendar() {
     const calendars = ((this._config.fab && this._config.fab.calendars) || []).slice();
     calendars.push('');
@@ -537,6 +547,8 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
         .fde-empty { font-size:13px; color:var(--secondary-text-color); }
         .fde-row { display:flex; align-items:center; gap:8px; }
         .fde-row ha-entity-picker { flex:1; }
+        .fde-move { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 6px; }
+        .fde-move:disabled { opacity:0.3; cursor:default; }
         .fde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }
         .fde-remove:hover { color:#e24b4a; }
         .fde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #14b8a6); cursor:pointer; }
@@ -584,13 +596,15 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
         (entity, idx) => `
       <div class="fde-row" data-idx="${idx}">
         <ha-entity-picker class="fde-picker" data-idx="${idx}" allow-custom-entity></ha-entity-picker>
+        <button class="fde-move fde-up" data-idx="${idx}" title="Move up" ${idx === 0 ? 'disabled' : ''}>&#9650;</button>
+        <button class="fde-move fde-down" data-idx="${idx}" title="Move down" ${idx === calendars.length - 1 ? 'disabled' : ''}>&#9660;</button>
         <button class="fde-remove" data-idx="${idx}" title="Remove calendar">&#10005;</button>
       </div>`
       )
       .join('');
     pane.innerHTML = `
       <div class="fde-wrap">
-        <div class="fde-hint">Leave this list empty to let the Add Event button offer every calendar known to Home Assistant. Add rows to restrict it to specific calendars.</div>
+        <div class="fde-hint">Leave this list empty to let the Add Event button offer every calendar known to Home Assistant. Add rows to restrict it to specific calendars; use the arrows to set the order they appear in.</div>
         ${calendars.length ? rowsHtml : '<div class="fde-empty">No calendars configured — Add Event will auto-discover every calendar.</div>'}
         <button class="fde-add" id="fde-add">+ Add calendar</button>
       </div>
@@ -604,6 +618,12 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
       picker.addEventListener('value-changed', (ev) => {
         this._updateFabCalendar(idx, ev.detail.value || '');
       });
+    });
+    pane.querySelectorAll('.fde-up').forEach((btn) => {
+      btn.addEventListener('click', () => this._moveFabCalendar(parseInt(btn.getAttribute('data-idx'), 10), -1));
+    });
+    pane.querySelectorAll('.fde-down').forEach((btn) => {
+      btn.addEventListener('click', () => this._moveFabCalendar(parseInt(btn.getAttribute('data-idx'), 10), 1));
     });
     pane.querySelectorAll('.fde-remove').forEach((btn) => {
       btn.addEventListener('click', () => this._removeFabCalendar(parseInt(btn.getAttribute('data-idx'), 10)));
