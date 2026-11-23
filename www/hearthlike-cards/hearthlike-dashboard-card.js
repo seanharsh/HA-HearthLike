@@ -245,7 +245,7 @@ class HearthlikeDashboardCard extends HTMLElement {
 
   _updatePeople() {
     if (!this._elPeople) return;
-    const html = this._config.people.filter((p) => p.entity).map((p) => {
+    const html = this._config.people.filter((p) => p && p.entity).map((p) => {
       const st = this._hass.states[p.entity];
       const name = p.name || (st && st.attributes.friendly_name) || p.entity;
       const pic = st && st.attributes.entity_picture;
@@ -263,7 +263,7 @@ class HearthlikeDashboardCard extends HTMLElement {
 
   _updateButtons() {
     if (!this._elButtons) return;
-    const html = this._config.buttons.filter((b) => b.entity).map((b) => {
+    const html = this._config.buttons.filter((b) => b && b.entity).map((b) => {
       const st = this._hass.states[b.entity];
       const state = st ? st.state : 'unavailable';
       const name = b.name || (st && st.attributes.friendly_name) || b.entity;

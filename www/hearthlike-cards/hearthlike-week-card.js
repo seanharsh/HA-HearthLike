@@ -142,12 +142,13 @@ class HearthlikeWeekCard extends HTMLElement {
           this._events = null;
         }
       }
-      this._maybeFetch();
+      this._maybeFetch(true);
       this._render();
     }, 30000);
   }
 
-  async _maybeFetch() {
+  // force: re-query even when this range is already loaded (the 30s tick uses it to pick up outside changes).
+  async _maybeFetch(force) {
     if (
       window.__hearthlikeCalendarUpdatedAt &&
       window.__hearthlikeCalendarUpdatedAt !== this._lastCalendarUpdateSeen
@@ -157,12 +158,13 @@ class HearthlikeWeekCard extends HTMLElement {
     }
     if (!this._hass || !this._config) return;
     const key = this._dateKey(this._selectedWeekStart);
-    if (this._fetchedKey === key && this._events) return;
+    if (!force && this._fetchedKey === key && this._events) return;
     this._fetchedKey = key;
     const start = new Date(this._selectedWeekStart);
     const end = new Date(this._selectedWeekStart);
     end.setDate(end.getDate() + 7);
     const results = {};
+    let failed = false;
     await Promise.all(
       this._getCalendars().map(async (cal) => {
         try {
@@ -175,13 +177,17 @@ class HearthlikeWeekCard extends HTMLElement {
             encodeURIComponent(end.toISOString());
           results[cal.entity] = (await this._hass.callApi('GET', path)) || [];
         } catch (e) {
-          results[cal.entity] = [];
+          // Keep what we already had for this calendar and retry on the next tick.
+          failed = true;
+          results[cal.entity] = (this._events && this._events[cal.entity]) || [];
         }
       })
     );
     if (this._dateKey(this._selectedWeekStart) === key) {
+      if (failed) this._fetchedKey = null;
+      const changed = !this._events || JSON.stringify(this._events) !== JSON.stringify(results);
       this._events = results;
-      this._render();
+      if (changed) this._render();
     }
   }
 

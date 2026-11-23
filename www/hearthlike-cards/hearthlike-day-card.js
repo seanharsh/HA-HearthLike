@@ -104,10 +104,10 @@ class HearthlikeDayCard extends HTMLElement {
           e.getTime() !== this._selectedDate.getTime() &&
             ((this._selectedDate = e), (this._events = null));
         }
-        this._maybeFetch(), this._render();
+        this._maybeFetch(!0), this._render();
       }, 3e4)));
   }
-  async _maybeFetch() {
+  async _maybeFetch(force) {
     if (
       (window.__hearthlikeCalendarUpdatedAt &&
         window.__hearthlikeCalendarUpdatedAt !== this._lastCalendarUpdateSeen &&
@@ -117,13 +117,14 @@ class HearthlikeDayCard extends HTMLElement {
     )
       return;
     const e = this._dateKey(this._selectedDate);
-    if (this._fetchedKey === e && this._events) return;
+    if (!force && this._fetchedKey === e && this._events) return;
     this._fetchedKey = e;
     const t = new Date(this._selectedDate),
       n = new Date(this._selectedDate);
     n.setDate(n.getDate() + 1);
     const a = Array.from(new Set(this._getColumns().flatMap((e) => e.entities))),
       i = {};
+    let failed = !1;
     await Promise.all(
       a.map(async (e) => {
         try {
@@ -136,11 +137,15 @@ class HearthlikeDayCard extends HTMLElement {
             encodeURIComponent(n.toISOString());
           i[e] = (await this._hass.callApi("GET", a)) || [];
         } catch (t) {
-          i[e] = [];
+          (failed = !0), (i[e] = (this._events && this._events[e]) || []);
         }
       }),
-    ),
-      this._dateKey(this._selectedDate) === e && ((this._events = i), this._render());
+    );
+    if (this._dateKey(this._selectedDate) === e) {
+      failed && (this._fetchedKey = null);
+      const changed = !this._events || JSON.stringify(this._events) !== JSON.stringify(i);
+      (this._events = i), changed && this._render();
+    }
   }
   _shiftDay(e) {
     const t = new Date(this._selectedDate);
