@@ -48,6 +48,8 @@ views:
     panel: true
     cards:
       - type: custom:hearthlike-calendar-card
+        default_view: day        # day | week | month
+        idle_timeout: 120        # seconds of inactivity before returning to default_view and today (0 = off)
         day:
           columns:               # one column per person
             - name: Family

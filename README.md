@@ -37,6 +37,18 @@ _Screenshots will be added with the first release._
 | Calendar (`hearthlike-calendar-card`) | Day / Week / Month in a single card with the add button built in |
 | Dashboard (`hearthlike-dashboard-card`) | All-in-one wall display for a panel view: weather + clock, people badges, the calendar, and quick toggle buttons |
 
+## Default view and idle reset
+
+`hearthlike-calendar-card` shows the Day tab first. Pick another with `default_view`, and set `idle_timeout` (seconds)
+to have the card go back to that view, and to today's date, after nobody has touched it for that long (handy on a
+wall display). Both are in the visual editor's View tab.
+
+```yaml
+type: custom:hearthlike-calendar-card
+default_view: week      # day (default) | week | month
+idle_timeout: 120       # seconds; omit or 0 to never reset
+```
+
 ## Add-event button colour
 
 The "+" button follows your theme's primary colour. Override it with `--hearthlike-fab-color` (button) and

@@ -65,6 +65,9 @@
 //   calendars: ['calendar.family', ...]   // restricts the Add Event dropdown;
 //                                          // omit/empty to auto-discover every
 //                                          // calendar known to HA.
+// default_view: day               # which tab shows first: day | week | month (default day)
+// idle_timeout: 120               # seconds without touching the card before it returns to
+//                                 # default_view and today's date; omit or 0 to never reset
 
 class HearthlikeCalendarCard extends HTMLElement {
   static getConfigElement() {
@@ -83,9 +86,45 @@ class HearthlikeCalendarCard extends HTMLElement {
   setConfig(config) {
     if (!config) throw new Error('Invalid configuration');
     this._config = config;
-    this._activeTab = this._activeTab || 'day';
+    this._activeTab = this._activeTab || this._defaultView();
     if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
     this._render();
+    this._armIdle();
+  }
+
+  _defaultView() {
+    const v = this._config && this._config.default_view;
+    return v === 'week' || v === 'month' ? v : 'day';
+  }
+
+  // ---- idle reset: after `idle_timeout` seconds with no interaction, go back to default_view and today ----
+
+  _noteActivity() {
+    this._dirty = true;
+    this._armIdle();
+  }
+
+  _armIdle() {
+    clearTimeout(this._idleTimer);
+    this._idleTimer = null;
+    const secs = Number(this._config && this._config.idle_timeout);
+    if (!(secs > 0) || !this._dirty) return;
+    this._idleTimer = setTimeout(() => this._onIdle(), secs * 1000);
+  }
+
+  _onIdle() {
+    this._idleTimer = null;
+    if (this._dialogOpen) { this._armIdle(); return; }
+    this._dirty = false;
+    this._setActiveTab(this._defaultView());
+    if (this._dayCard && this._dayCard._goToday) this._dayCard._goToday();
+    if (this._weekCard && this._weekCard._goThisWeek) this._weekCard._goThisWeek();
+    if (this._monthCard && this._monthCard._goThisMonth) this._monthCard._goThisMonth();
+  }
+
+  disconnectedCallback() {
+    clearTimeout(this._idleTimer);
+    this._idleTimer = null;
   }
 
   set hass(hass) {
@@ -105,6 +144,7 @@ class HearthlikeCalendarCard extends HTMLElement {
 
   connectedCallback() {
     if (this._config) this._render();
+    this._armIdle();
   }
 
   // ---- Add Event FAB + dialog (ported from hearthlike-fab-card.js) ----
@@ -419,6 +459,9 @@ class HearthlikeCalendarCard extends HTMLElement {
       el.addEventListener('click', () => this._setActiveTab(el.dataset.tab));
     });
     this.shadowRoot.getElementById('fab-btn').addEventListener('click', () => this._openAddDialog());
+    ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((type) => {
+      this.shadowRoot.addEventListener(type, () => this._noteActivity(), { capture: true, passive: true });
+    });
   }
 
   _render() {
@@ -556,6 +599,8 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
         .fde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }
         .fde-remove:hover { color:#e24b4a; }
         .fde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #14b8a6); cursor:pointer; }
+        .vw-field { display:flex; flex-direction:column; gap:6px; font-size:14px; color:var(--primary-text-color); }
+        .vw-field select, .vw-field input { font:inherit; padding:8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); box-sizing:border-box; width:100%; }
         .fde-hint { font-size:12px; color:var(--secondary-text-color); }
       </style>
       <div class="tab-bar">
@@ -563,11 +608,27 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
         <div class="tab" data-tab="week">Weekly</div>
         <div class="tab" data-tab="month">Monthly</div>
         <div class="tab" data-tab="fab">Add Event</div>
+        <div class="tab" data-tab="view">View</div>
       </div>
       <div class="pane" data-pane="day"></div>
       <div class="pane" data-pane="week"></div>
       <div class="pane" data-pane="month"></div>
       <div class="pane" data-pane="fab"></div>
+      <div class="pane" data-pane="view">
+        <div class="fde-wrap">
+          <label class="vw-field">Show this view first
+            <select id="vw-default">
+              <option value="day">Day</option>
+              <option value="week">Weekly</option>
+              <option value="month">Monthly</option>
+            </select>
+          </label>
+          <label class="vw-field">Return to that view (and today) after this many idle seconds
+            <input type="number" id="vw-idle" min="0" step="1" placeholder="0 = never">
+          </label>
+          <div class="fde-hint">The first view is used on page load. With an idle time set, the card goes back to it, and to today's date, once nobody has touched it for that long.</div>
+        </div>
+      </div>
     `;
     this._dayEditor = document.createElement('hearthlike-day-card-editor');
     this._weekEditor = document.createElement('hearthlike-week-card-editor');
@@ -578,6 +639,17 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
     this.shadowRoot.querySelectorAll('.tab').forEach((el) => {
       el.addEventListener('click', () => this._setActiveTab(el.dataset.tab));
     });
+    const setView = () => {
+      const cfg = { ...this._config };
+      const def = this.shadowRoot.getElementById('vw-default').value;
+      const idle = Number(this.shadowRoot.getElementById('vw-idle').value);
+      if (def === 'day') delete cfg.default_view; else cfg.default_view = def;
+      if (idle > 0) cfg.idle_timeout = idle; else delete cfg.idle_timeout;
+      this._config = cfg;
+      this._emitChange();
+    };
+    this.shadowRoot.getElementById('vw-default').addEventListener('change', setView);
+    this.shadowRoot.getElementById('vw-idle').addEventListener('input', setView);
     this._dayEditor.addEventListener('config-changed', (ev) => {
       ev.stopPropagation();
       this._updateSection('day', ev.detail.config);
@@ -656,6 +728,13 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
       this._monthEditor.hass = this._hass;
     }
     this._renderFabPane();
+    // Only touch the view fields when they differ, so typing in them keeps focus.
+    const def = this.shadowRoot.getElementById('vw-default');
+    const wantDef = this._config.default_view || 'day';
+    if (def.value !== wantDef) def.value = wantDef;
+    const idle = this.shadowRoot.getElementById('vw-idle');
+    const wantIdle = this._config.idle_timeout ? String(this._config.idle_timeout) : '';
+    if (idle.value !== wantIdle && this.shadowRoot.activeElement !== idle) idle.value = wantIdle;
     this._setActiveTab(this._activeTab);
   }
 
