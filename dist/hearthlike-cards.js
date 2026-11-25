@@ -218,6 +218,8 @@ class HearthlikeCalendarCard extends HTMLElement {
 
     const dlg = document.createElement('ha-dialog');
     dlg.className = 'hearthlike-add-dialog';
+    // Newer ha-dialog takes headerTitle; older releases use the slotted header below.
+    dlg.headerTitle = 'Add Event';
     dlg.innerHTML = `
       <ha-dialog-header slot="heading">
         <span slot="title">Add Event</span>
@@ -1701,6 +1703,9 @@ class HearthlikeDayCard extends HTMLElement {
     this._closeEventDialog();
     const t = document.createElement("ha-dialog");
     (t.className = "hearthlike-event-dialog"),
+      // Newer ha-dialog takes headerTitle; older releases use heading.
+      (t.headerTitle = e.title),
+      (t.heading = e.title),
       t.addEventListener("closed", () => {
         t.remove(), (this._dialogOpen = !1);
       }),
@@ -2285,6 +2290,8 @@ class HearthlikeFabCard extends HTMLElement {
     const r = this._pad(i) + ":" + this._pad(s),
       l = document.createElement("ha-dialog");
     (l.className = "hearthlike-add-dialog"),
+      // Newer ha-dialog takes headerTitle; older releases use the slotted header below.
+      (l.headerTitle = "Add Event"),
       (l.innerHTML = `\n      <ha-dialog-header slot="heading">\n        <span slot="title">Add Event</span>\n      </ha-dialog-header>\n      <div class="af-content">\n        <label class="af-field">\n          <span class="af-label">Calendar</span>\n          <select class="af-input" id="af-cal">\n            ${e.map((e) => `<option value="${this._esc(e.id)}">${this._esc(e.name)}</option>`).join("")}\n          </select>\n        </label>\n        <label class="af-field">\n          <span class="af-label">Title</span>\n          <input class="af-input" id="af-title" type="text" placeholder="Event title" />\n        </label>\n        <label class="af-checkrow">\n          <input type="checkbox" id="af-allday" />\n          <span>All day</span>\n        </label>\n        <div class="af-row">\n          <label class="af-field">\n            <span class="af-label">Start date</span>\n            <input class="af-input" id="af-start-date" type="date" value="${t}" />\n          </label>\n          <label class="af-field" id="af-start-time-wrap">\n            <span class="af-label">Start time</span>\n            <input class="af-input" id="af-start-time" type="time" value="${a}" />\n          </label>\n        </div>\n        <div class="af-row">\n          <label class="af-field">\n            <span class="af-label">End date</span>\n            <input class="af-input" id="af-end-date" type="date" value="${t}" />\n          </label>\n          <label class="af-field" id="af-end-time-wrap">\n            <span class="af-label">End time</span>\n            <input class="af-input" id="af-end-time" type="time" value="${r}" />\n          </label>\n        </div>\n        <label class="af-field">\n          <span class="af-label">Description</span>\n          <textarea class="af-input" id="af-desc" rows="2"></textarea>\n        </label>\n        <div class="af-error" id="af-error"></div>\n        <div class="af-actions">\n          <button class="af-btn af-btn-text" id="af-cancel">Cancel</button>\n          <button class="af-btn af-btn-filled" id="af-save">Add</button>\n        </div>\n      </div>\n    `),
       this.shadowRoot.appendChild(l),
       (l.open = !0),
@@ -2769,6 +2776,9 @@ class HearthlikeMonthCard extends HTMLElement {
     this._closeEventDialog();
     const dlg = document.createElement('ha-dialog');
     dlg.className = 'hearthlike-event-dialog';
+    // Newer ha-dialog takes headerTitle; older releases use heading.
+    dlg.headerTitle = record.title;
+    dlg.heading = record.title;
     dlg.addEventListener('closed', () => {
       dlg.remove();
       this._dialogOpen = false;
@@ -3676,6 +3686,9 @@ class HearthlikeWeekCard extends HTMLElement {
     this._closeEventDialog();
     const dlg = document.createElement('ha-dialog');
     dlg.className = 'hearthlike-event-dialog';
+    // Newer ha-dialog takes headerTitle; older releases use heading.
+    dlg.headerTitle = record.title;
+    dlg.heading = record.title;
     dlg.addEventListener('closed', () => {
       dlg.remove();
       this._dialogOpen = false;

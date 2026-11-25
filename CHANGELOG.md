@@ -8,6 +8,7 @@
 - `hearthlike-calendar-card`: `default_view` (which tab shows first) and `idle_timeout` (return to that view and today after inactivity), with a View tab in the editor.
 - Add-event button: centred plus icon, and its colour follows the HA theme (`--hearthlike-fab-color` / `--hearthlike-fab-icon-color` to override).
 - Day, week and month views: per-calendar `icon` (MDI icon, emoji, image or entity picture) shown before event titles.
+- Add-event and event dialogs show their title on current Home Assistant.
 - `hearthlike-calendar-card`: Day / Weekly / Monthly tabs with a built-in add-event button and a visual editor.
 - `hearthlike-day-card`: per-person hourly day view with all-day row and now-line.
 - `hearthlike-week-card`: weekly hourly grid with overlapping-event layout.

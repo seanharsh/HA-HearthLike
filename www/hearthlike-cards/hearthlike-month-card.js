@@ -405,6 +405,9 @@ class HearthlikeMonthCard extends HTMLElement {
     this._closeEventDialog();
     const dlg = document.createElement('ha-dialog');
     dlg.className = 'hearthlike-event-dialog';
+    // Newer ha-dialog takes headerTitle; older releases use heading.
+    dlg.headerTitle = record.title;
+    dlg.heading = record.title;
     dlg.addEventListener('closed', () => {
       dlg.remove();
       this._dialogOpen = false;

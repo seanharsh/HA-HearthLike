@@ -214,6 +214,8 @@ class HearthlikeCalendarCard extends HTMLElement {
 
     const dlg = document.createElement('ha-dialog');
     dlg.className = 'hearthlike-add-dialog';
+    // Newer ha-dialog takes headerTitle; older releases use the slotted header below.
+    dlg.headerTitle = 'Add Event';
     dlg.innerHTML = `
       <ha-dialog-header slot="heading">
         <span slot="title">Add Event</span>

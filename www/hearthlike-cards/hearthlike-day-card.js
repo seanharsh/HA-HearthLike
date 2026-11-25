@@ -334,6 +334,9 @@ class HearthlikeDayCard extends HTMLElement {
     this._closeEventDialog();
     const t = document.createElement("ha-dialog");
     (t.className = "hearthlike-event-dialog"),
+      // Newer ha-dialog takes headerTitle; older releases use heading.
+      (t.headerTitle = e.title),
+      (t.heading = e.title),
       t.addEventListener("closed", () => {
         t.remove(), (this._dialogOpen = !1);
       }),
