@@ -76,7 +76,10 @@ class HearthlikeWeekCard extends HTMLElement {
     // scrolls, rather than a one-shot flag that can get stuck on a timing race.
     this._userScrolled = false;
     this._lastScrollTop = null;
-    if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
+    if (!this.shadowRoot) {
+      this.attachShadow({ mode: 'open' });
+      this._watchIconErrors();
+    }
     this._render();
   }
 
@@ -252,6 +255,20 @@ class HearthlikeWeekCard extends HTMLElement {
   _iconFor(entityId) {
     const c = this._getCalendars().find((x) => x.entity === entityId);
     return c && c.icon;
+  }
+
+  // An icon image that fails to load (a wrong link, or a web page instead of the file) shows a placeholder.
+  // Error events don't bubble, so this listens in the capture phase.
+  _watchIconErrors() {
+    this.shadowRoot.addEventListener('error', (ev) => {
+      const img = ev.target;
+      if (!img.matches || !img.matches('img.evicon')) return;
+      const placeholder = document.createElement('ha-icon');
+      placeholder.className = 'evicon evbroken';
+      placeholder.setAttribute('icon', 'mdi:image-broken-variant');
+      placeholder.title = 'Icon could not be loaded';
+      img.replaceWith(placeholder);
+    }, true);
   }
 
   // Small icon shown before an event title. `icon` is an MDI name (mdi:soccer), an image URL or /local path,
@@ -1278,7 +1295,7 @@ class HearthlikeWeekCardEditor extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    this.shadowRoot?.querySelectorAll('ha-entity-picker').forEach((el) => {
+    this.shadowRoot?.querySelectorAll('ha-entity-picker, hearthlike-icon-field').forEach((el) => {
       el.hass = hass;
     });
   }
@@ -1334,7 +1351,7 @@ class HearthlikeWeekCardEditor extends HTMLElement {
         <ha-entity-picker class="hde-picker" data-idx="${idx}" allow-custom-entity></ha-entity-picker>
         <input class="hde-color" data-field="color" data-idx="${idx}" type="color" value="${cal.color || '#378ADD'}" />
         <button class="hde-remove" data-idx="${idx}" title="Remove calendar">&#10005;</button>
-        <input class="hde-icon" data-field="icon" data-idx="${idx}" type="text" placeholder="Icon (optional): mdi:soccer, emoji, image URL, or entity" value="${(cal.icon || '').replace(/"/g, '&quot;')}" />
+        <hearthlike-icon-field class="hde-icon" data-idx="${idx}"></hearthlike-icon-field>
       </div>`
       )
       .join('');
@@ -1345,7 +1362,7 @@ class HearthlikeWeekCardEditor extends HTMLElement {
         .hde-wrap { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
         .hde-empty { font-size:13px; color:var(--secondary-text-color); }
         .hde-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-        .hde-icon { order:4; flex:1 1 100%; box-sizing:border-box; font:inherit; font-size:13px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
+        .hde-icon { order:4; flex:1 1 100%; min-width:0; }
         .hde-row ha-entity-picker { flex:1; }
         .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }
         .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }
@@ -1379,9 +1396,19 @@ class HearthlikeWeekCardEditor extends HTMLElement {
       picker.value = (calendars[idx] && calendars[idx].entity) || '';
       picker.addEventListener('value-changed', (ev) => {
         this._updateCalendar(idx, { entity: ev.detail.value || '' });
+        const field = this.shadowRoot.querySelector(`hearthlike-icon-field[data-idx="${idx}"]`);
+        if (field) field.entities = [ev.detail.value || ''];
       });
     });
 
+    this.shadowRoot.querySelectorAll('hearthlike-icon-field').forEach((field) => {
+      const idx = parseInt(field.getAttribute('data-idx'), 10);
+      field.label = 'Event icon (search, emoji, image URL or entity)';
+      field.entities = [(calendars[idx] && calendars[idx].entity) || ''];
+      field.value = (calendars[idx] && calendars[idx].icon) || '';
+      field.hass = this._hass;
+      field.addEventListener('icon-changed', (ev) => this._updateCalendar(idx, { icon: ev.detail.value }));
+    });
     this.shadowRoot.querySelectorAll('input[data-field]').forEach((input) => {
       input.addEventListener('change', (ev) => {
         const idx = parseInt(input.getAttribute('data-idx'), 10);

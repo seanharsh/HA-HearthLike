@@ -325,7 +325,7 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     if (this._calEditor) this._calEditor.hass = hass;
-    this.shadowRoot?.querySelectorAll('ha-entity-picker').forEach((el) => { el.hass = hass; });
+    this.shadowRoot?.querySelectorAll('ha-entity-picker, hearthlike-icon-field').forEach((el) => { el.hass = hass; });
   }
 
   connectedCallback() {
@@ -398,7 +398,7 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
         .hint { font-size: 12px; color: var(--secondary-text-color); }
         .empty { font-size: 13px; color: var(--secondary-text-color); }
         .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px; border: 1px solid var(--divider-color); border-radius: 8px; }
-        .row ha-entity-picker { flex: 1 1 100%; min-width: 0; }
+        .row ha-entity-picker, .row hearthlike-icon-field { flex: 1 1 100%; min-width: 0; }
         .row input[type=text] { flex: 1 1 120px; min-width: 0; font: inherit; padding: 8px; border-radius: 6px;
                                 border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); }
         .row input[type=color] { width: 40px; height: 36px; padding: 0; border: 1px solid var(--divider-color); border-radius: 6px; background: none; }
@@ -542,7 +542,7 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
         <input type="text" class="f-name" data-idx="${idx}" placeholder="Name (optional)" value="${this._esc(it.name || '')}">
         ${people
           ? `<input type="color" class="f-color" data-idx="${idx}" title="Ring and name colour" value="${this._esc(/^#[0-9a-f]{6}$/i.test(it.color || '') ? it.color : '#378add')}">`
-          : `<input type="text" class="f-icon" data-idx="${idx}" placeholder="Icon, e.g. mdi:lightbulb" value="${this._esc(it.icon || '')}">
+          : `<div class="icon-slot" data-idx="${idx}"></div>
              <label class="chk"><input type="checkbox" class="f-state" data-idx="${idx}" ${it.show_state ? 'checked' : ''}> Show state</label>`}
         <span class="actions">
           <button class="move move-up" data-idx="${idx}" title="Move up" ${idx === 0 ? 'disabled' : ''}>&#9650;</button>
@@ -565,7 +565,17 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
     });
     pane.querySelectorAll('.f-name').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'name', el.value.trim())));
     pane.querySelectorAll('.f-color').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'color', el.value)));
-    pane.querySelectorAll('.f-icon').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'icon', el.value.trim())));
+    // Buttons draw icons only, so no emoji row here.
+    pane.querySelectorAll('.icon-slot').forEach((slot) => {
+      const idx = Number(slot.dataset.idx);
+      const field = document.createElement('hearthlike-icon-field');
+      field.emoji = false;
+      field.label = 'Icon (optional)';
+      field.value = items[idx].icon || '';
+      field.hass = this._hass;
+      field.addEventListener('icon-changed', (ev) => this._setItem(key, idx, 'icon', ev.detail.value));
+      slot.replaceWith(field);
+    });
     pane.querySelectorAll('.f-state').forEach((el) => el.addEventListener('change', () => this._setItem(key, Number(el.dataset.idx), 'show_state', el.checked)));
     pane.querySelectorAll('.move-up').forEach((el) => el.addEventListener('click', () => this._moveItem(key, Number(el.dataset.idx), -1)));
     pane.querySelectorAll('.move-down').forEach((el) => el.addEventListener('click', () => this._moveItem(key, Number(el.dataset.idx), 1)));

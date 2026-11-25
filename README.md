@@ -69,7 +69,13 @@ columns:                      # day card; week and month use calendars: [{ entit
     icon: person.riley          # an entity: its picture (or its icon) is used
 ```
 
-`icon` can also be an emoji (`🏒`) or an image (`/local/logo.png` or a full URL).
+`icon` can also be an emoji (`🏒`) or an image, including SVG (`/local/logo.svg` or a full URL).
+An image address must point at the file itself, not at a web page that shows it. An image that fails to load is
+replaced by a broken-image icon.
+
+In the visual editors, the icon field searches MDI and installed icon sets, accepts anything else you type, and
+offers tappable emoji, led by the ones that suit the column or calendar name. For other emoji, use your system's
+emoji keyboard.
 
 ## Weather tap action
 

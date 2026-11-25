@@ -34,7 +34,7 @@ class HearthlikeDayCard extends HTMLElement {
       (this._userScrolled = !1),
       (this._lastScrollTop = null),
       (this._pxPerHour = null),
-      this.shadowRoot || this.attachShadow({ mode: "open" }),
+      this.shadowRoot || (this.attachShadow({ mode: "open" }), this._watchIconErrors()),
       this._render();
   }
   _computeDynamicPxPerHour(e) {
@@ -171,6 +171,20 @@ class HearthlikeDayCard extends HTMLElement {
     const c = this._getColumns().find((x) => x.entities && x.entities.includes(entityId));
     return c && c.icon;
   }
+  // An icon image that fails to load (a wrong link, or a web page instead of the file) shows a placeholder.
+  // Error events don't bubble, so this listens in the capture phase.
+  _watchIconErrors() {
+    this.shadowRoot.addEventListener('error', (ev) => {
+      const img = ev.target;
+      if (!img.matches || !img.matches('img.evicon')) return;
+      const placeholder = document.createElement('ha-icon');
+      placeholder.className = 'evicon evbroken';
+      placeholder.setAttribute('icon', 'mdi:image-broken-variant');
+      placeholder.title = 'Icon could not be loaded';
+      img.replaceWith(placeholder);
+    }, true);
+  }
+
   // Small icon shown before an event title. `icon` is an MDI name (mdi:soccer), an image URL or /local path,
   // an entity id (its picture, else its icon), or any other text, which is shown as is (an emoji).
   _iconHtml(icon) {
@@ -761,7 +775,7 @@ class HearthlikeDayCardEditor extends HTMLElement {
     this._hass = e;
     // The calendar pickers need hass to render, and the calendar card editor sets it after setConfig.
     if (first && e && this._config && this.shadowRoot) return this._render();
-    this.shadowRoot?.querySelectorAll("ha-selector").forEach((t) => {
+    this.shadowRoot?.querySelectorAll("ha-selector, hearthlike-icon-field").forEach((t) => {
       t.hass = e;
     });
   }
@@ -800,11 +814,11 @@ class HearthlikeDayCardEditor extends HTMLElement {
       t = e
         .map(
           (e, t) =>
-            `\n      <div class="hde-row" data-idx="${t}">\n        <div class="hde-row-top">\n          <input class="hde-name" data-field="name" data-idx="${t}" type="text" value="${(e.name || "").replace(/"/g, "&quot;")}" placeholder="Column name" />\n          <input class="hde-color" data-field="color" data-idx="${t}" type="color" value="${e.color || "#378ADD"}" />\n          <button class="hde-remove" data-idx="${t}" title="Remove column">&#10005;</button>\n        </div>\n        ${this._hass ? '<ha-selector class="hde-picker" data-idx="' + t + '"></ha-selector>' : ""}\n        <input class="hde-icon" data-field="icon" data-idx="${t}" type="text" placeholder="Icon (optional): mdi:soccer, emoji, image URL, or entity" value="${(e.icon || "").replace(/"/g, "&quot;")}" />\n      </div>`,
+            `\n      <div class="hde-row" data-idx="${t}">\n        <div class="hde-row-top">\n          <input class="hde-name" data-field="name" data-idx="${t}" type="text" value="${(e.name || "").replace(/"/g, "&quot;")}" placeholder="Column name" />\n          <input class="hde-color" data-field="color" data-idx="${t}" type="color" value="${e.color || "#378ADD"}" />\n          <button class="hde-remove" data-idx="${t}" title="Remove column">&#10005;</button>\n        </div>\n        ${this._hass ? '<ha-selector class="hde-picker" data-idx="' + t + '"></ha-selector>' : ""}\n        <hearthlike-icon-field class="hde-icon" data-idx="${t}"></hearthlike-icon-field>\n      </div>`,
         )
         .join("");
     this.shadowRoot || this.attachShadow({ mode: "open" }),
-      (this.shadowRoot.innerHTML = `\n      <style>\n        .hde-wrap { display:flex; flex-direction:column; gap:16px; padding:8px 0; }\n        .hde-empty { font-size:13px; color:var(--secondary-text-color); }\n        .hde-row { display:flex; flex-direction:column; gap:6px; padding:10px; border:1px solid var(--divider-color); border-radius:8px; }\n        .hde-row-top { display:flex; align-items:center; gap:8px; }\n        .hde-name { flex:1; font:inherit; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }\n        .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }\n        .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }\n        .hde-remove:hover { color:#e24b4a; }\n        .hde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }\n        .hde-icon { box-sizing:border-box; font:inherit; font-size:13px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }\n        .hde-hint { font-size:12px; color:var(--secondary-text-color); }\n      </style>\n      <div class="hde-wrap">\n        <div class="hde-hint">Leave "columns" empty (remove all rows) to auto-show every calendar on the system. Add rows to pick specific calendars, names, and colors.</div>\n        ${e.length ? t : '<div class="hde-empty">No columns configured — the card will auto-discover every calendar.</div>'}\n        <button class="hde-add" id="hde-add">+ Add column</button>\n      </div>\n    `),
+      (this.shadowRoot.innerHTML = `\n      <style>\n        .hde-wrap { display:flex; flex-direction:column; gap:16px; padding:8px 0; }\n        .hde-empty { font-size:13px; color:var(--secondary-text-color); }\n        .hde-row { display:flex; flex-direction:column; gap:6px; padding:10px; border:1px solid var(--divider-color); border-radius:8px; }\n        .hde-row-top { display:flex; align-items:center; gap:8px; }\n        .hde-name { flex:1; font:inherit; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }\n        .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }\n        .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }\n        .hde-remove:hover { color:#e24b4a; }\n        .hde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }\n        .hde-icon { flex:1 1 100%; min-width:0; }\n        .hde-hint { font-size:12px; color:var(--secondary-text-color); }\n      </style>\n      <div class="hde-wrap">\n        <div class="hde-hint">Leave "columns" empty (remove all rows) to auto-show every calendar on the system. Add rows to pick specific calendars, names, and colors.</div>\n        ${e.length ? t : '<div class="hde-empty">No columns configured — the card will auto-discover every calendar.</div>'}\n        <button class="hde-add" id="hde-add">+ Add column</button>\n      </div>\n    `),
       this.shadowRoot.querySelectorAll(".hde-picker").forEach((t) => {
         const n = parseInt(t.getAttribute("data-idx"), 10);
         (t.hass = this._hass),
@@ -814,13 +828,26 @@ class HearthlikeDayCardEditor extends HTMLElement {
           (t.value = (e[n] && e[n].entities) || []),
           t.addEventListener("value-changed", (e) => {
             this._updateColumn(n, { entities: e.detail.value || [] });
+            const field = this.shadowRoot.querySelector(`hearthlike-icon-field[data-idx="${n}"]`);
+            if (field) field.entities = e.detail.value || [];
           });
+      }),
+      this.shadowRoot.querySelectorAll("hearthlike-icon-field").forEach((t) => {
+        const n = parseInt(t.getAttribute("data-idx"), 10);
+        (t.label = "Event icon (search, emoji, image URL or entity)"),
+          (t.entities = (e[n] && e[n].entities) || []),
+          (t.hint = (e[n] && e[n].name) || ""),
+          (t.value = (e[n] && e[n].icon) || ""),
+          (t.hass = this._hass),
+          t.addEventListener("icon-changed", (e) => this._updateColumn(n, { icon: e.detail.value }));
       }),
       this.shadowRoot.querySelectorAll("input[data-field]").forEach((e) => {
         e.addEventListener("change", (t) => {
           const n = parseInt(e.getAttribute("data-idx"), 10),
             a = e.getAttribute("data-field");
           this._updateColumn(n, { [a]: t.target.value });
+          const field = this.shadowRoot.querySelector(`hearthlike-icon-field[data-idx="${n}"]`);
+          if (field && a === "name") field.hint = t.target.value;
         });
       }),
       this.shadowRoot.querySelectorAll(".hde-remove").forEach((e) => {

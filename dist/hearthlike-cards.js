@@ -1104,7 +1104,7 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     if (this._calEditor) this._calEditor.hass = hass;
-    this.shadowRoot?.querySelectorAll('ha-entity-picker').forEach((el) => { el.hass = hass; });
+    this.shadowRoot?.querySelectorAll('ha-entity-picker, hearthlike-icon-field').forEach((el) => { el.hass = hass; });
   }
 
   connectedCallback() {
@@ -1177,7 +1177,7 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
         .hint { font-size: 12px; color: var(--secondary-text-color); }
         .empty { font-size: 13px; color: var(--secondary-text-color); }
         .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px; border: 1px solid var(--divider-color); border-radius: 8px; }
-        .row ha-entity-picker { flex: 1 1 100%; min-width: 0; }
+        .row ha-entity-picker, .row hearthlike-icon-field { flex: 1 1 100%; min-width: 0; }
         .row input[type=text] { flex: 1 1 120px; min-width: 0; font: inherit; padding: 8px; border-radius: 6px;
                                 border: 1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color); }
         .row input[type=color] { width: 40px; height: 36px; padding: 0; border: 1px solid var(--divider-color); border-radius: 6px; background: none; }
@@ -1321,7 +1321,7 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
         <input type="text" class="f-name" data-idx="${idx}" placeholder="Name (optional)" value="${this._esc(it.name || '')}">
         ${people
           ? `<input type="color" class="f-color" data-idx="${idx}" title="Ring and name colour" value="${this._esc(/^#[0-9a-f]{6}$/i.test(it.color || '') ? it.color : '#378add')}">`
-          : `<input type="text" class="f-icon" data-idx="${idx}" placeholder="Icon, e.g. mdi:lightbulb" value="${this._esc(it.icon || '')}">
+          : `<div class="icon-slot" data-idx="${idx}"></div>
              <label class="chk"><input type="checkbox" class="f-state" data-idx="${idx}" ${it.show_state ? 'checked' : ''}> Show state</label>`}
         <span class="actions">
           <button class="move move-up" data-idx="${idx}" title="Move up" ${idx === 0 ? 'disabled' : ''}>&#9650;</button>
@@ -1344,7 +1344,17 @@ class HearthlikeDashboardCardEditor extends HTMLElement {
     });
     pane.querySelectorAll('.f-name').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'name', el.value.trim())));
     pane.querySelectorAll('.f-color').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'color', el.value)));
-    pane.querySelectorAll('.f-icon').forEach((el) => el.addEventListener('input', () => this._setItem(key, Number(el.dataset.idx), 'icon', el.value.trim())));
+    // Buttons draw icons only, so no emoji row here.
+    pane.querySelectorAll('.icon-slot').forEach((slot) => {
+      const idx = Number(slot.dataset.idx);
+      const field = document.createElement('hearthlike-icon-field');
+      field.emoji = false;
+      field.label = 'Icon (optional)';
+      field.value = items[idx].icon || '';
+      field.hass = this._hass;
+      field.addEventListener('icon-changed', (ev) => this._setItem(key, idx, 'icon', ev.detail.value));
+      slot.replaceWith(field);
+    });
     pane.querySelectorAll('.f-state').forEach((el) => el.addEventListener('change', () => this._setItem(key, Number(el.dataset.idx), 'show_state', el.checked)));
     pane.querySelectorAll('.move-up').forEach((el) => el.addEventListener('click', () => this._moveItem(key, Number(el.dataset.idx), -1)));
     pane.querySelectorAll('.move-down').forEach((el) => el.addEventListener('click', () => this._moveItem(key, Number(el.dataset.idx), 1)));
@@ -1424,7 +1434,7 @@ class HearthlikeDayCard extends HTMLElement {
       (this._userScrolled = !1),
       (this._lastScrollTop = null),
       (this._pxPerHour = null),
-      this.shadowRoot || this.attachShadow({ mode: "open" }),
+      this.shadowRoot || (this.attachShadow({ mode: "open" }), this._watchIconErrors()),
       this._render();
   }
   _computeDynamicPxPerHour(e) {
@@ -1561,6 +1571,20 @@ class HearthlikeDayCard extends HTMLElement {
     const c = this._getColumns().find((x) => x.entities && x.entities.includes(entityId));
     return c && c.icon;
   }
+  // An icon image that fails to load (a wrong link, or a web page instead of the file) shows a placeholder.
+  // Error events don't bubble, so this listens in the capture phase.
+  _watchIconErrors() {
+    this.shadowRoot.addEventListener('error', (ev) => {
+      const img = ev.target;
+      if (!img.matches || !img.matches('img.evicon')) return;
+      const placeholder = document.createElement('ha-icon');
+      placeholder.className = 'evicon evbroken';
+      placeholder.setAttribute('icon', 'mdi:image-broken-variant');
+      placeholder.title = 'Icon could not be loaded';
+      img.replaceWith(placeholder);
+    }, true);
+  }
+
   // Small icon shown before an event title. `icon` is an MDI name (mdi:soccer), an image URL or /local path,
   // an entity id (its picture, else its icon), or any other text, which is shown as is (an emoji).
   _iconHtml(icon) {
@@ -2151,7 +2175,7 @@ class HearthlikeDayCardEditor extends HTMLElement {
     this._hass = e;
     // The calendar pickers need hass to render, and the calendar card editor sets it after setConfig.
     if (first && e && this._config && this.shadowRoot) return this._render();
-    this.shadowRoot?.querySelectorAll("ha-selector").forEach((t) => {
+    this.shadowRoot?.querySelectorAll("ha-selector, hearthlike-icon-field").forEach((t) => {
       t.hass = e;
     });
   }
@@ -2190,11 +2214,11 @@ class HearthlikeDayCardEditor extends HTMLElement {
       t = e
         .map(
           (e, t) =>
-            `\n      <div class="hde-row" data-idx="${t}">\n        <div class="hde-row-top">\n          <input class="hde-name" data-field="name" data-idx="${t}" type="text" value="${(e.name || "").replace(/"/g, "&quot;")}" placeholder="Column name" />\n          <input class="hde-color" data-field="color" data-idx="${t}" type="color" value="${e.color || "#378ADD"}" />\n          <button class="hde-remove" data-idx="${t}" title="Remove column">&#10005;</button>\n        </div>\n        ${this._hass ? '<ha-selector class="hde-picker" data-idx="' + t + '"></ha-selector>' : ""}\n        <input class="hde-icon" data-field="icon" data-idx="${t}" type="text" placeholder="Icon (optional): mdi:soccer, emoji, image URL, or entity" value="${(e.icon || "").replace(/"/g, "&quot;")}" />\n      </div>`,
+            `\n      <div class="hde-row" data-idx="${t}">\n        <div class="hde-row-top">\n          <input class="hde-name" data-field="name" data-idx="${t}" type="text" value="${(e.name || "").replace(/"/g, "&quot;")}" placeholder="Column name" />\n          <input class="hde-color" data-field="color" data-idx="${t}" type="color" value="${e.color || "#378ADD"}" />\n          <button class="hde-remove" data-idx="${t}" title="Remove column">&#10005;</button>\n        </div>\n        ${this._hass ? '<ha-selector class="hde-picker" data-idx="' + t + '"></ha-selector>' : ""}\n        <hearthlike-icon-field class="hde-icon" data-idx="${t}"></hearthlike-icon-field>\n      </div>`,
         )
         .join("");
     this.shadowRoot || this.attachShadow({ mode: "open" }),
-      (this.shadowRoot.innerHTML = `\n      <style>\n        .hde-wrap { display:flex; flex-direction:column; gap:16px; padding:8px 0; }\n        .hde-empty { font-size:13px; color:var(--secondary-text-color); }\n        .hde-row { display:flex; flex-direction:column; gap:6px; padding:10px; border:1px solid var(--divider-color); border-radius:8px; }\n        .hde-row-top { display:flex; align-items:center; gap:8px; }\n        .hde-name { flex:1; font:inherit; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }\n        .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }\n        .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }\n        .hde-remove:hover { color:#e24b4a; }\n        .hde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }\n        .hde-icon { box-sizing:border-box; font:inherit; font-size:13px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }\n        .hde-hint { font-size:12px; color:var(--secondary-text-color); }\n      </style>\n      <div class="hde-wrap">\n        <div class="hde-hint">Leave "columns" empty (remove all rows) to auto-show every calendar on the system. Add rows to pick specific calendars, names, and colors.</div>\n        ${e.length ? t : '<div class="hde-empty">No columns configured — the card will auto-discover every calendar.</div>'}\n        <button class="hde-add" id="hde-add">+ Add column</button>\n      </div>\n    `),
+      (this.shadowRoot.innerHTML = `\n      <style>\n        .hde-wrap { display:flex; flex-direction:column; gap:16px; padding:8px 0; }\n        .hde-empty { font-size:13px; color:var(--secondary-text-color); }\n        .hde-row { display:flex; flex-direction:column; gap:6px; padding:10px; border:1px solid var(--divider-color); border-radius:8px; }\n        .hde-row-top { display:flex; align-items:center; gap:8px; }\n        .hde-name { flex:1; font:inherit; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }\n        .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }\n        .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }\n        .hde-remove:hover { color:#e24b4a; }\n        .hde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }\n        .hde-icon { flex:1 1 100%; min-width:0; }\n        .hde-hint { font-size:12px; color:var(--secondary-text-color); }\n      </style>\n      <div class="hde-wrap">\n        <div class="hde-hint">Leave "columns" empty (remove all rows) to auto-show every calendar on the system. Add rows to pick specific calendars, names, and colors.</div>\n        ${e.length ? t : '<div class="hde-empty">No columns configured — the card will auto-discover every calendar.</div>'}\n        <button class="hde-add" id="hde-add">+ Add column</button>\n      </div>\n    `),
       this.shadowRoot.querySelectorAll(".hde-picker").forEach((t) => {
         const n = parseInt(t.getAttribute("data-idx"), 10);
         (t.hass = this._hass),
@@ -2204,13 +2228,26 @@ class HearthlikeDayCardEditor extends HTMLElement {
           (t.value = (e[n] && e[n].entities) || []),
           t.addEventListener("value-changed", (e) => {
             this._updateColumn(n, { entities: e.detail.value || [] });
+            const field = this.shadowRoot.querySelector(`hearthlike-icon-field[data-idx="${n}"]`);
+            if (field) field.entities = e.detail.value || [];
           });
+      }),
+      this.shadowRoot.querySelectorAll("hearthlike-icon-field").forEach((t) => {
+        const n = parseInt(t.getAttribute("data-idx"), 10);
+        (t.label = "Event icon (search, emoji, image URL or entity)"),
+          (t.entities = (e[n] && e[n].entities) || []),
+          (t.hint = (e[n] && e[n].name) || ""),
+          (t.value = (e[n] && e[n].icon) || ""),
+          (t.hass = this._hass),
+          t.addEventListener("icon-changed", (e) => this._updateColumn(n, { icon: e.detail.value }));
       }),
       this.shadowRoot.querySelectorAll("input[data-field]").forEach((e) => {
         e.addEventListener("change", (t) => {
           const n = parseInt(e.getAttribute("data-idx"), 10),
             a = e.getAttribute("data-field");
           this._updateColumn(n, { [a]: t.target.value });
+          const field = this.shadowRoot.querySelector(`hearthlike-icon-field[data-idx="${n}"]`);
+          if (field && a === "name") field.hint = t.target.value;
         });
       }),
       this.shadowRoot.querySelectorAll(".hde-remove").forEach((e) => {
@@ -2399,6 +2436,194 @@ console.info(
 
 }
 
+// ---- www/hearthlike-cards/hearthlike-icon-field.js ----
+{
+// hearthlike-icon-field.js
+//
+// The icon input used by the card editors: Home Assistant's icon picker (search MDI and installed icon sets, or
+// type any other value), plus a row of tappable emoji with the ones that suit the calendar's name first.
+//
+// Properties: hass, value, label, entities (calendar entity ids) and hint (a column name) to rank the emoji,
+// emoji (false hides the row). Fires "icon-changed" with { value }.
+
+// [emoji, words it stands for]. A word matches the start of a word in the calendar's names.
+const HEARTHLIKE_EMOJI = [
+  ['👨‍👩‍👧', 'family'],
+  ['🎂', 'birthday anniversary'],
+  ['🏫', 'school class teacher'],
+  ['💼', 'work office job meeting'],
+  ['⚽', 'soccer'],
+  ['🩺', 'doctor medical health clinic appointment'],
+  ['🎵', 'music piano choir chorus band concert orchestra'],
+  ['✈️', 'travel trip flight vacation'],
+  ['🗑️', 'trash garbage recycl waste'],
+  ['🏒', 'hockey'],
+  ['🏀', 'basketball'],
+  ['⚾', 'baseball softball'],
+  ['🏈', 'football'],
+  ['🏊', 'swim pool'],
+  ['🤸', 'gymnastics tumbling cheer'],
+  ['💃', 'dance ballet'],
+  ['🏋️', 'gym workout fitness sport practice'],
+  ['🎨', 'art craft'],
+  ['📚', 'study library reading homework book'],
+  ['🧒', 'kid child'],
+  ['🦷', 'dentist dental orthodont'],
+  ['🐾', 'pet dog cat vet'],
+  ['🚗', 'car drive carpool'],
+  ['🍽️', 'dinner meal food menu lunch'],
+  ['🛒', 'grocery shopping'],
+  ['🧹', 'chore clean'],
+  ['🌳', 'yard garden outdoor camp'],
+  ['⛪', 'church worship'],
+  ['💰', 'bill pay money budget'],
+  ['🎉', 'party holiday event celebrat'],
+  ['⭐', 'favorite important'],
+];
+const HEARTHLIKE_EMOJI_SHOWN = 8;
+
+class HearthlikeIconField extends HTMLElement {
+  connectedCallback() {
+    // Properties set before this element was defined sit on the instance; hand them to the setters.
+    for (const key of ['hass', 'value', 'label', 'entities', 'hint', 'emoji']) {
+      if (Object.prototype.hasOwnProperty.call(this, key)) {
+        const v = this[key];
+        delete this[key];
+        this[key] = v;
+      }
+    }
+    this._render();
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    if (this._picker) {
+      this._picker.hass = hass;
+      this._renderEmoji();
+    } else this._render();
+  }
+
+  set value(v) {
+    this._value = v || '';
+    if (this._picker) this._picker.value = this._value;
+    this._renderEmoji();
+  }
+
+  get value() {
+    return this._value || '';
+  }
+
+  set label(v) {
+    this._label = v;
+    if (this._picker) this._picker.label = v;
+  }
+
+  set entities(v) {
+    this._entities = Array.isArray(v) ? v : [];
+    this._renderEmoji();
+  }
+
+  set hint(v) {
+    this._hint = v || '';
+    this._renderEmoji();
+  }
+
+  set emoji(v) {
+    this._noEmoji = v === false;
+    this._renderEmoji();
+  }
+
+  _render() {
+    if (!this.isConnected) return;
+    if (!this.shadowRoot) {
+      this.attachShadow({ mode: 'open' });
+      this.shadowRoot.innerHTML = `
+        <style>
+          :host { display:block; }
+          .emoji { display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin-top:4px; }
+          .emoji:empty { display:none; }
+          button { font:inherit; cursor:pointer; border-radius:6px; border:1px solid transparent; background:none; color:var(--primary-text-color); }
+          .pick { font-size:20px; line-height:1; padding:5px; }
+          .pick:hover { border-color:var(--divider-color); }
+          .pick.selected { border-color:var(--primary-color); background:color-mix(in srgb, var(--primary-color) 15%, transparent); }
+          .more { font-size:13px; padding:6px 8px; color:var(--primary-color); }
+        </style>
+        <div class="picker"></div>
+        <div class="emoji"></div>`;
+      this.shadowRoot.querySelector('.emoji').addEventListener('click', (ev) => {
+        const button = ev.target.closest('button');
+        if (!button) return;
+        if (button.classList.contains('more')) {
+          this._all = !this._all;
+          this._renderEmoji();
+        } else {
+          // Tapping the selected emoji again clears the icon.
+          this._pick(button.dataset.emoji === this.value ? '' : button.dataset.emoji);
+        }
+      });
+    }
+    // HA pickers need hass before they can render.
+    if (!this._picker && this._hass) {
+      const picker = document.createElement('ha-selector');
+      picker.hass = this._hass;
+      picker.selector = { icon: {} };
+      picker.label = this._label || 'Icon (optional)';
+      picker.required = false;
+      picker.value = this.value;
+      picker.addEventListener('value-changed', (ev) => {
+        ev.stopPropagation();
+        this._pick(ev.detail.value || '');
+      });
+      this.shadowRoot.querySelector('.picker').appendChild(picker);
+      this._picker = picker;
+    }
+    this._renderEmoji();
+  }
+
+  _pick(value) {
+    if (value === this.value) return;
+    this.value = value;
+    this.dispatchEvent(new CustomEvent('icon-changed', { detail: { value } }));
+  }
+
+  // Emoji suiting the column name come first, then those suiting the calendars' names, then the rest.
+  _rankedEmoji() {
+    const calendars = (this._entities || []).map((id) => {
+      const st = this._hass && this._hass.states && this._hass.states[id];
+      return id + ' ' + ((st && st.attributes && st.attributes.friendly_name) || '');
+    }).join(' ');
+    const suits = (text) => {
+      const clean = String(text || '').replace(/[._]/g, ' ');
+      return ([, words]) => words.split(' ').some((w) => new RegExp('\\b' + w, 'i').test(clean));
+    };
+    return [...new Set([
+      ...HEARTHLIKE_EMOJI.filter(suits(this._hint)),
+      ...HEARTHLIKE_EMOJI.filter(suits(calendars)),
+      ...HEARTHLIKE_EMOJI,
+    ])];
+  }
+
+  _renderEmoji() {
+    const row = this.shadowRoot && this.shadowRoot.querySelector('.emoji');
+    if (!row) return;
+    if (this._noEmoji) {
+      row.innerHTML = '';
+      return;
+    }
+    const ranked = this._rankedEmoji();
+    row.innerHTML = (this._all ? ranked : ranked.slice(0, HEARTHLIKE_EMOJI_SHOWN))
+      .map(([emoji, words]) => {
+        const name = words.split(' ')[0];
+        const selected = emoji === this.value;
+        return `<button type="button" class="pick${selected ? ' selected' : ''}" data-emoji="${emoji}" title="${name}" aria-label="${name}" aria-pressed="${selected}">${emoji}</button>`;
+      })
+      .join('') + `<button type="button" class="more">${this._all ? 'Fewer' : 'More…'}</button>`;
+  }
+}
+if (!customElements.get('hearthlike-icon-field')) customElements.define('hearthlike-icon-field', HearthlikeIconField);
+
+}
+
 // ---- www/hearthlike-cards/hearthlike-month-card.js ----
 {
 // Styles both layouts share: the top bar, event icons and the event dialogs.
@@ -2475,7 +2700,10 @@ class HearthlikeMonthCard extends HTMLElement {
     this._userScrolledMonth = false;
     // dots layout: the tapped day (YYYY-MM-DD); null means today.
     this._selectedDay = null;
-    if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
+    if (!this.shadowRoot) {
+      this.attachShadow({ mode: 'open' });
+      this._watchIconErrors();
+    }
     this._render();
   }
   set hass(hass) {
@@ -2656,6 +2884,20 @@ class HearthlikeMonthCard extends HTMLElement {
   _iconFor(entityId) {
     const c = this._getCalendars().find((x) => x.entity === entityId);
     return c && c.icon;
+  }
+
+  // An icon image that fails to load (a wrong link, or a web page instead of the file) shows a placeholder.
+  // Error events don't bubble, so this listens in the capture phase.
+  _watchIconErrors() {
+    this.shadowRoot.addEventListener('error', (ev) => {
+      const img = ev.target;
+      if (!img.matches || !img.matches('img.evicon')) return;
+      const placeholder = document.createElement('ha-icon');
+      placeholder.className = 'evicon evbroken';
+      placeholder.setAttribute('icon', 'mdi:image-broken-variant');
+      placeholder.title = 'Icon could not be loaded';
+      img.replaceWith(placeholder);
+    }, true);
   }
 
   // Small icon shown before an event title. `icon` is an MDI name (mdi:soccer), an image URL or /local path,
@@ -3371,7 +3613,7 @@ class HearthlikeMonthCardEditor extends HTMLElement {
   }
   set hass(hass) {
     this._hass = hass;
-    this.shadowRoot?.querySelectorAll('ha-entity-picker').forEach((el) => {
+    this.shadowRoot?.querySelectorAll('ha-entity-picker, hearthlike-icon-field').forEach((el) => {
       el.hass = hass;
     });
   }
@@ -3412,7 +3654,7 @@ class HearthlikeMonthCardEditor extends HTMLElement {
         <ha-entity-picker class="hde-picker" data-idx="${idx}" allow-custom-entity></ha-entity-picker>
         <input class="hde-color" data-field="color" data-idx="${idx}" type="color" value="${cal.color || '#378ADD'}" />
         <button class="hde-remove" data-idx="${idx}" title="Remove calendar">&#10005;</button>
-        <input class="hde-icon" data-field="icon" data-idx="${idx}" type="text" placeholder="Icon (optional): mdi:soccer, emoji, image URL, or entity" value="${(cal.icon || '').replace(/"/g, '&quot;')}" />
+        <hearthlike-icon-field class="hde-icon" data-idx="${idx}"></hearthlike-icon-field>
       </div>`
       )
       .join('');
@@ -3422,7 +3664,7 @@ class HearthlikeMonthCardEditor extends HTMLElement {
         .hde-wrap { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
         .hde-empty { font-size:13px; color:var(--secondary-text-color); }
         .hde-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-        .hde-icon { order:4; flex:1 1 100%; box-sizing:border-box; font:inherit; font-size:13px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
+        .hde-icon { order:4; flex:1 1 100%; min-width:0; }
         .hde-row ha-entity-picker { flex:1; }
         .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }
         .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }
@@ -3452,7 +3694,17 @@ class HearthlikeMonthCardEditor extends HTMLElement {
       picker.value = (calendars[idx] && calendars[idx].entity) || '';
       picker.addEventListener('value-changed', (ev) => {
         this._updateCalendar(idx, { entity: ev.detail.value || '' });
+        const field = this.shadowRoot.querySelector(`hearthlike-icon-field[data-idx="${idx}"]`);
+        if (field) field.entities = [ev.detail.value || ''];
       });
+    });
+    this.shadowRoot.querySelectorAll('hearthlike-icon-field').forEach((field) => {
+      const idx = parseInt(field.getAttribute('data-idx'), 10);
+      field.label = 'Event icon (search, emoji, image URL or entity)';
+      field.entities = [(calendars[idx] && calendars[idx].entity) || ''];
+      field.value = (calendars[idx] && calendars[idx].icon) || '';
+      field.hass = this._hass;
+      field.addEventListener('icon-changed', (ev) => this._updateCalendar(idx, { icon: ev.detail.value }));
     });
     this.shadowRoot.querySelectorAll('input[data-field]').forEach((input) => {
       input.addEventListener('change', (ev) => {
@@ -3565,7 +3817,10 @@ class HearthlikeWeekCard extends HTMLElement {
     // scrolls, rather than a one-shot flag that can get stuck on a timing race.
     this._userScrolled = false;
     this._lastScrollTop = null;
-    if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
+    if (!this.shadowRoot) {
+      this.attachShadow({ mode: 'open' });
+      this._watchIconErrors();
+    }
     this._render();
   }
 
@@ -3741,6 +3996,20 @@ class HearthlikeWeekCard extends HTMLElement {
   _iconFor(entityId) {
     const c = this._getCalendars().find((x) => x.entity === entityId);
     return c && c.icon;
+  }
+
+  // An icon image that fails to load (a wrong link, or a web page instead of the file) shows a placeholder.
+  // Error events don't bubble, so this listens in the capture phase.
+  _watchIconErrors() {
+    this.shadowRoot.addEventListener('error', (ev) => {
+      const img = ev.target;
+      if (!img.matches || !img.matches('img.evicon')) return;
+      const placeholder = document.createElement('ha-icon');
+      placeholder.className = 'evicon evbroken';
+      placeholder.setAttribute('icon', 'mdi:image-broken-variant');
+      placeholder.title = 'Icon could not be loaded';
+      img.replaceWith(placeholder);
+    }, true);
   }
 
   // Small icon shown before an event title. `icon` is an MDI name (mdi:soccer), an image URL or /local path,
@@ -4767,7 +5036,7 @@ class HearthlikeWeekCardEditor extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    this.shadowRoot?.querySelectorAll('ha-entity-picker').forEach((el) => {
+    this.shadowRoot?.querySelectorAll('ha-entity-picker, hearthlike-icon-field').forEach((el) => {
       el.hass = hass;
     });
   }
@@ -4823,7 +5092,7 @@ class HearthlikeWeekCardEditor extends HTMLElement {
         <ha-entity-picker class="hde-picker" data-idx="${idx}" allow-custom-entity></ha-entity-picker>
         <input class="hde-color" data-field="color" data-idx="${idx}" type="color" value="${cal.color || '#378ADD'}" />
         <button class="hde-remove" data-idx="${idx}" title="Remove calendar">&#10005;</button>
-        <input class="hde-icon" data-field="icon" data-idx="${idx}" type="text" placeholder="Icon (optional): mdi:soccer, emoji, image URL, or entity" value="${(cal.icon || '').replace(/"/g, '&quot;')}" />
+        <hearthlike-icon-field class="hde-icon" data-idx="${idx}"></hearthlike-icon-field>
       </div>`
       )
       .join('');
@@ -4834,7 +5103,7 @@ class HearthlikeWeekCardEditor extends HTMLElement {
         .hde-wrap { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
         .hde-empty { font-size:13px; color:var(--secondary-text-color); }
         .hde-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-        .hde-icon { order:4; flex:1 1 100%; box-sizing:border-box; font:inherit; font-size:13px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
+        .hde-icon { order:4; flex:1 1 100%; min-width:0; }
         .hde-row ha-entity-picker { flex:1; }
         .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }
         .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }
@@ -4868,9 +5137,19 @@ class HearthlikeWeekCardEditor extends HTMLElement {
       picker.value = (calendars[idx] && calendars[idx].entity) || '';
       picker.addEventListener('value-changed', (ev) => {
         this._updateCalendar(idx, { entity: ev.detail.value || '' });
+        const field = this.shadowRoot.querySelector(`hearthlike-icon-field[data-idx="${idx}"]`);
+        if (field) field.entities = [ev.detail.value || ''];
       });
     });
 
+    this.shadowRoot.querySelectorAll('hearthlike-icon-field').forEach((field) => {
+      const idx = parseInt(field.getAttribute('data-idx'), 10);
+      field.label = 'Event icon (search, emoji, image URL or entity)';
+      field.entities = [(calendars[idx] && calendars[idx].entity) || ''];
+      field.value = (calendars[idx] && calendars[idx].icon) || '';
+      field.hass = this._hass;
+      field.addEventListener('icon-changed', (ev) => this._updateCalendar(idx, { icon: ev.detail.value }));
+    });
     this.shadowRoot.querySelectorAll('input[data-field]').forEach((input) => {
       input.addEventListener('change', (ev) => {
         const idx = parseInt(input.getAttribute('data-idx'), 10);

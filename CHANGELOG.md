@@ -7,7 +7,8 @@
 - `hearthlike-dashboard-card`: `weather_tap_action` (more-info by default, or navigate / URL / call a service / none), and reorder arrows for people and buttons in the editor.
 - `hearthlike-calendar-card`: `default_view` (which tab shows first) and `idle_timeout` (return to that view and today after inactivity), with a View tab in the editor.
 - Add-event button: centred plus icon, and its colour follows the HA theme (`--hearthlike-fab-color` / `--hearthlike-fab-icon-color` to override).
-- Day, week and month views: per-calendar `icon` (MDI icon, emoji, image or entity picture) shown before event titles.
+- Day, week and month views: per-calendar `icon` (MDI icon, emoji, image or entity picture) shown before event titles; an image that fails to load shows a broken-image icon.
+- Editors: searchable icon picker, with emoji suggestions for calendar icons based on the column or calendar name.
 - Each card logs its version in the browser console.
 - Light themes: visible grid lines and today highlight, and past events stay readable.
 - Add-event and event dialogs show their title on current Home Assistant.
