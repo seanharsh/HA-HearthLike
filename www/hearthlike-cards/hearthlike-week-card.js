@@ -48,6 +48,8 @@ class HearthlikeWeekCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    // Lets the stylesheet soften the past-event dimming on light themes.
+    this.toggleAttribute('light', !!(hass && hass.themes && hass.themes.darkMode === false));
     this._startTicking();
     this._maybeFetch();
   }
@@ -1010,7 +1012,7 @@ class HearthlikeWeekCard extends HTMLElement {
         .headers-row .spacer { width:52px; flex:none; }
         .headers-flex { flex:1; display:flex; gap:15px; }
         .col-header { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:2px; padding:2px 4px; border-radius:8px; }
-        .col-header.today { background:rgba(255,255,255,0.05); }
+        .col-header.today { background:color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
         .day-name { font-size:clamp(19px, 2.4vmin, 29px); font-weight:600; letter-spacing:0.03em; text-transform:uppercase; color:var(--secondary-text-color); }
         .day-num { font-size:clamp(27px, 3.5vmin, 43px); font-weight:500; color:var(--primary-text-color); }
         .allday-row { flex:none; display:flex; margin-bottom:6px; }
@@ -1023,11 +1025,11 @@ class HearthlikeWeekCard extends HTMLElement {
         .grid-wrap { display:flex; position:relative; }
         .hour-col { position:relative; width:52px; flex:none; }
         .hour-label { position:absolute; right:8px; transform:translateY(4px); font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }
-        .cols-wrap { position:relative; flex:1; display:flex; gap:15px; border-top:1px solid rgba(255,255,255,0.14); }
+        .cols-wrap { position:relative; flex:1; display:flex; gap:15px; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }
         .hour-lines { position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; z-index:0; }
-        .hline { position:absolute; left:0; right:0; border-top:1px solid rgba(255,255,255,0.14); }
+        .hline { position:absolute; left:0; right:0; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }
         .col-body { position:relative; flex:1; min-width:0; z-index:1; }
-        .col-body.today { background:rgba(255,255,255,0.03); border-radius:6px; }
+        .col-body.today { background:color-mix(in srgb, var(--primary-text-color) 3%, transparent); border-radius:6px; }
         .event { position:absolute; border-radius:3px; padding:clamp(4px, 0.5vmin, 6px); box-sizing:border-box; overflow:hidden; }
         .event-title { font-size:clamp(14px, 1.5vmin, 20px); font-weight:800; line-height:1.2; color:#fff; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; white-space:normal; overflow:hidden; text-overflow:ellipsis; }
         .event-time { font-size:clamp(11.9px, 1.3vmin, 17px); font-weight:500; color:rgba(255,255,255,0.85); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
@@ -1036,6 +1038,9 @@ class HearthlikeWeekCard extends HTMLElement {
         .col-header.past-day { opacity:0.3; }
         .col-body.past-day { filter:brightness(0.3); }
         .event.past { filter:brightness(0.5); }
+        :host([light]) .event.past { filter:saturate(0.45); opacity:0.7; }
+        :host([light]) .col-body.past-day { filter:saturate(0.45); opacity:0.65; }
+        :host([light]) .allday-box.past-day { filter:saturate(0.45); opacity:0.65; }
         .event, .allday-box { cursor:pointer; } .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; }
         .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }
         .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }

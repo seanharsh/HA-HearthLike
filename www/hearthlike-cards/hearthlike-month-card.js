@@ -42,6 +42,8 @@ class HearthlikeMonthCard extends HTMLElement {
   }
   set hass(hass) {
     this._hass = hass;
+    // Lets the stylesheet soften the past-event dimming on light themes.
+    this.toggleAttribute('light', !!(hass && hass.themes && hass.themes.darkMode === false));
     this._startTicking();
     this._maybeFetch();
   }
@@ -683,7 +685,7 @@ class HearthlikeMonthCard extends HTMLElement {
         .grid-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin; }
         .grid { display:grid; grid-template-columns:repeat(7, 1fr); grid-template-rows:repeat(${numWeeks}, minmax(52px, 1fr)); gap:4px; min-height:100%; }
         .day-cell { position:relative; min-width:0; min-height:0; border-radius:6px; padding:3px 4px; display:flex; flex-direction:column; gap:clamp(4px, 0.55vmin, 7px); overflow:hidden; }
-        .day-cell.today { background:rgba(255,255,255,0.05); }
+        .day-cell.today { background:color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
         .day-cell.other-month { opacity:0.35; }
         .day-cell.past-day:not(.other-month) { filter:brightness(0.6); }
         .day-num { flex:none; font-size:clamp(11px, 1.3vmin, 16px); font-weight:400; color:var(--primary-text-color); }
@@ -694,6 +696,9 @@ class HearthlikeMonthCard extends HTMLElement {
         .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; }
         .mevent-title { font-size:clamp(14px, 1.5vmin, 20px); font-weight:800; color:#fff; line-height:1.2; white-space:normal; overflow-wrap:break-word; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; }
         .mevent.past { filter:brightness(0.55); }
+        :host([light]) .mevent.past { filter:saturate(0.45); opacity:0.7; }
+        :host([light]) .day-cell.past-day:not(.other-month) { filter:saturate(0.45); opacity:0.7; }
+        :host([light]) .day-cell.other-month { opacity:0.55; }
         .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }
         .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
         .hd-row ha-icon { color:var(--primary-text-color); flex:none; width:20px; height:22px; }
