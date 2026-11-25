@@ -1264,3 +1264,10 @@ class HearthlikeWeekCardEditor extends HTMLElement {
 }
 
 if (!customElements.get('hearthlike-week-card-editor')) customElements.define('hearthlike-week-card-editor', HearthlikeWeekCardEditor);
+
+// Version banner. dist/build.sh fills in the version from CHANGELOG.md; unbundled or unreleased shows "dev".
+console.info(
+  '%c HEARTHLIKE-WEEK-CARD %c ' + ('__HEARTHLIKE_VERSION__'.startsWith('__') ? 'dev' : 'v__HEARTHLIKE_VERSION__') + ' ',
+  'color:#fff;background:#03a9f4;font-weight:700;',
+  'color:#03a9f4;background:#fff;font-weight:700;'
+);

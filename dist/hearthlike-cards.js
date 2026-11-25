@@ -760,6 +760,13 @@ if (!window.customCards.some((c) => c.type === 'hearthlike-calendar-card'))
   description: 'Combined Day / Weekly / Monthly calendar view with a built-in tab bar, Add Event button, and a single visual editor.',
 });
 
+// Version banner. dist/build.sh fills in the version from CHANGELOG.md; unbundled or unreleased shows "dev".
+console.info(
+  '%c HEARTHLIKE-CALENDAR-CARD %c ' + ('__HEARTHLIKE_VERSION__'.startsWith('__') ? 'dev' : 'v__HEARTHLIKE_VERSION__') + ' ',
+  'color:#fff;background:#03a9f4;font-weight:700;',
+  'color:#03a9f4;background:#fff;font-weight:700;'
+);
+
 }
 
 // ---- www/hearthlike-cards/hearthlike-dashboard-card.js ----
@@ -1362,6 +1369,13 @@ if (!window.customCards.some((c) => c.type === 'hearthlike-dashboard-card'))
     name: 'HearthLike Dashboard Card',
     description: 'All-in-one family wall display for a panel view: weather and clock, people badges, the calendar, and quick toggle buttons.',
   });
+
+// Version banner. dist/build.sh fills in the version from CHANGELOG.md; unbundled or unreleased shows "dev".
+console.info(
+  '%c HEARTHLIKE-DASHBOARD-CARD %c ' + ('__HEARTHLIKE_VERSION__'.startsWith('__') ? 'dev' : 'v__HEARTHLIKE_VERSION__') + ' ',
+  'color:#fff;background:#03a9f4;font-weight:700;',
+  'color:#03a9f4;background:#fff;font-weight:700;'
+);
 
 }
 
@@ -2208,6 +2222,13 @@ class HearthlikeDayCardEditor extends HTMLElement {
 if (!customElements.get("hearthlike-day-card-editor"))
   customElements.define("hearthlike-day-card-editor", HearthlikeDayCardEditor);
 
+// Version banner. dist/build.sh fills in the version from CHANGELOG.md; unbundled or unreleased shows "dev".
+console.info(
+  '%c HEARTHLIKE-DAY-CARD %c ' + ('__HEARTHLIKE_VERSION__'.startsWith('__') ? 'dev' : 'v__HEARTHLIKE_VERSION__') + ' ',
+  'color:#fff;background:#03a9f4;font-weight:700;',
+  'color:#03a9f4;background:#fff;font-weight:700;'
+);
+
 }
 
 // ---- www/hearthlike-cards/hearthlike-fab-card.js ----
@@ -2366,6 +2387,13 @@ if (!window.customCards.some((c) => c.type === "hearthlike-fab-card"))
     name: "HearthLike Add-Event FAB",
     description: "Floating add-event button, inspired by Hearth Display",
   });
+
+// Version banner. dist/build.sh fills in the version from CHANGELOG.md; unbundled or unreleased shows "dev".
+console.info(
+  '%c HEARTHLIKE-FAB-CARD %c ' + ('__HEARTHLIKE_VERSION__'.startsWith('__') ? 'dev' : 'v__HEARTHLIKE_VERSION__') + ' ',
+  'color:#fff;background:#03a9f4;font-weight:700;',
+  'color:#03a9f4;background:#fff;font-weight:700;'
+);
 
 }
 
@@ -3275,6 +3303,13 @@ class HearthlikeMonthCardEditor extends HTMLElement {
   }
 }
 if (!customElements.get('hearthlike-month-card-editor')) customElements.define('hearthlike-month-card-editor', HearthlikeMonthCardEditor);
+
+// Version banner. dist/build.sh fills in the version from CHANGELOG.md; unbundled or unreleased shows "dev".
+console.info(
+  '%c HEARTHLIKE-MONTH-CARD %c ' + ('__HEARTHLIKE_VERSION__'.startsWith('__') ? 'dev' : 'v__HEARTHLIKE_VERSION__') + ' ',
+  'color:#fff;background:#03a9f4;font-weight:700;',
+  'color:#03a9f4;background:#fff;font-weight:700;'
+);
 
 }
 
@@ -4546,5 +4581,12 @@ class HearthlikeWeekCardEditor extends HTMLElement {
 }
 
 if (!customElements.get('hearthlike-week-card-editor')) customElements.define('hearthlike-week-card-editor', HearthlikeWeekCardEditor);
+
+// Version banner. dist/build.sh fills in the version from CHANGELOG.md; unbundled or unreleased shows "dev".
+console.info(
+  '%c HEARTHLIKE-WEEK-CARD %c ' + ('__HEARTHLIKE_VERSION__'.startsWith('__') ? 'dev' : 'v__HEARTHLIKE_VERSION__') + ' ',
+  'color:#fff;background:#03a9f4;font-weight:700;',
+  'color:#03a9f4;background:#fff;font-weight:700;'
+);
 
 }

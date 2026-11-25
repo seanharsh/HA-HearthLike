@@ -24,6 +24,13 @@ fi
   done
 } > "$OUT"
 
+# Version banner: the newest "## [x.y.z]" heading in CHANGELOG.md. With none yet, the banner says "dev".
+VERSION=$(sed -n 's/^## \[\([0-9][0-9A-Za-z.+-]*\)\].*/\1/p' CHANGELOG.md | head -n 1)
+if [ -n "$VERSION" ]; then
+  sed "s/__HEARTHLIKE_VERSION__/$VERSION/g" "$OUT" > "$OUT.tmp"
+  mv "$OUT.tmp" "$OUT"
+fi
+
 if command -v node >/dev/null 2>&1; then
   cp "$OUT" "$OUT.check.mjs"
   node --check "$OUT.check.mjs" || { rm -f "$OUT.check.mjs"; echo "Bundle failed module syntax check" >&2; exit 1; }
