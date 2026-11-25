@@ -2148,10 +2148,13 @@ class HearthlikeDayCardEditor extends HTMLElement {
       this._render();
   }
   set hass(e) {
-    (this._hass = e),
-      this.shadowRoot?.querySelectorAll("ha-entity-picker").forEach((t) => {
-        t.hass = e;
-      });
+    const first = !this._hass;
+    this._hass = e;
+    // The calendar pickers need hass to render, and the calendar card editor sets it after setConfig.
+    if (first && e && this._config && this.shadowRoot) return this._render();
+    this.shadowRoot?.querySelectorAll("ha-selector").forEach((t) => {
+      t.hass = e;
+    });
   }
   _emitChange() {
     this.dispatchEvent(
@@ -2188,7 +2191,7 @@ class HearthlikeDayCardEditor extends HTMLElement {
       t = e
         .map(
           (e, t) =>
-            `\n      <div class="hde-row" data-idx="${t}">\n        <div class="hde-row-top">\n          <input class="hde-name" data-field="name" data-idx="${t}" type="text" value="${(e.name || "").replace(/"/g, "&quot;")}" placeholder="Column name" />\n          <input class="hde-color" data-field="color" data-idx="${t}" type="color" value="${e.color || "#378ADD"}" />\n          <button class="hde-remove" data-idx="${t}" title="Remove column">&#10005;</button>\n        </div>\n        <ha-selector class="hde-picker" data-idx="${t}"></ha-selector>\n        <input class="hde-icon" data-field="icon" data-idx="${t}" type="text" placeholder="Icon (optional): mdi:soccer, emoji, image URL, or entity" value="${(e.icon || "").replace(/"/g, "&quot;")}" />\n      </div>`,
+            `\n      <div class="hde-row" data-idx="${t}">\n        <div class="hde-row-top">\n          <input class="hde-name" data-field="name" data-idx="${t}" type="text" value="${(e.name || "").replace(/"/g, "&quot;")}" placeholder="Column name" />\n          <input class="hde-color" data-field="color" data-idx="${t}" type="color" value="${e.color || "#378ADD"}" />\n          <button class="hde-remove" data-idx="${t}" title="Remove column">&#10005;</button>\n        </div>\n        ${this._hass ? '<ha-selector class="hde-picker" data-idx="' + t + '"></ha-selector>' : ""}\n        <input class="hde-icon" data-field="icon" data-idx="${t}" type="text" placeholder="Icon (optional): mdi:soccer, emoji, image URL, or entity" value="${(e.icon || "").replace(/"/g, "&quot;")}" />\n      </div>`,
         )
         .join("");
     this.shadowRoot || this.attachShadow({ mode: "open" }),
