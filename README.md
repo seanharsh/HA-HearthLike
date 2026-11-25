@@ -26,13 +26,11 @@ The day, week and month cards on their own:
 
 ## Cards at a Glance
 
-_Screenshots will be added with the first release._
-
 | Card | What it does |
 |---|---|
 | Day (`hearthlike-day-card`) | One day, one column per calendar |
-| Week (`hearthlike-week-card`) | Hourly week grid with all-day row and now-line |
-| Month (`hearthlike-month-card`) | Month grid with event editing |
+| Week (`hearthlike-week-card`) | Day list over several weeks, or an hourly week grid with all-day row and now-line |
+| Month (`hearthlike-month-card`) | Month grid with colored dots and the selected day's events, or event boxes in each day |
 | Add event button (`hearthlike-fab-card`) | Floating "+" that creates a calendar event |
 | Calendar (`hearthlike-calendar-card`) | Day / Week / Month in a single card with the add button built in |
 | Dashboard (`hearthlike-dashboard-card`) | All-in-one wall display for a panel view: weather + clock, people badges, the calendar, and quick toggle buttons |
@@ -89,6 +87,27 @@ weather_tap_action:
 `url` takes `url_path` (and `new_tab: false` to stay in the same tab); `call-service` takes `service`
 (`domain.service`) and optional `service_data` and `target`.
 
+## Week and month layouts
+
+Both views default to a wall-display layout; the older ones are still available (also in each view's editor).
+
+```yaml
+week:
+  layout: list      # list (default): day columns for several weeks, scrolling | grid: one week by the hour
+  weeks: 13         # list only: weeks shown, starting with the current one (1-26)
+month:
+  layout: dots      # dots (default): a dot per calendar color, tap a day to list its events | events: boxes in each day
+```
+
+The same keys work on `hearthlike-week-card` and `hearthlike-month-card`. The week list shows fewer columns on
+narrow screens. `hour_start`, `hour_end` and `px_per_hour` apply to the `grid` layout only. The `dots` layout
+fits as many weeks as the screen has room for; set `--hearthlike-month-row-height` (for example `197px`) for
+taller rows, and `--hearthlike-month-title-size`, `--hearthlike-month-day-name-size`,
+`--hearthlike-month-number-size`, `--hearthlike-month-dot-size` or `--hearthlike-month-list-size` to resize its parts.
+
+On screens too short for everything, the dashboard card keeps the calendar at a usable height
+(`--hearthlike-calendar-min-height`, 420px) and scrolls.
+
 ## Styling the dashboard card
 
 `hearthlike-dashboard-card` follows your theme out of the box. To change it, use any of these:
@@ -98,7 +117,10 @@ weather_tap_action:
   `--hearthlike-header-padding`, `--hearthlike-people-gap`, `--hearthlike-people-padding`, `--hearthlike-avatar-size`,
   `--hearthlike-avatar-font-size`, `--hearthlike-ring-width`, `--hearthlike-name-font-size`,
   `--hearthlike-button-background`, `--hearthlike-button-color`, `--hearthlike-button-active-color`,
-  `--hearthlike-button-icon-size`, `--hearthlike-button-padding`.
+  `--hearthlike-button-icon-size`, `--hearthlike-button-padding`, `--hearthlike-calendar-min-height`.
+  The calendar views (inside this card or on their own) also read `--hearthlike-tab-font-size` (14px),
+  `--hearthlike-day-name-size` (20px, week column headings), `--hearthlike-day-number-size` (29px, week),
+  `--hearthlike-event-title-size` (14px) and `--hearthlike-event-time-size` (11.9px).
 - **The `style` option**: your CSS is applied inside the card and wins over the built-in rules. It is also
   in the visual editor (General tab).
 

@@ -372,10 +372,14 @@ class HearthlikeCalendarCard extends HTMLElement {
         }
         .tab {
           flex: 1;
-          text-align: center;
-          padding: clamp(8px, 1.2vmin, 14px) 0;
-          font-size: clamp(11px, 1.3vmin, 15px);
-          letter-spacing: 0.05em;
+          height: clamp(34px, 5.5vmin, 48px);
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: var(--hearthlike-tab-font-size, 14px);
+          font-weight: 500;
+          letter-spacing: 0.0893em;
           text-transform: uppercase;
           color: var(--secondary-text-color, rgba(255, 255, 255, 0.55));
           cursor: pointer;
@@ -399,6 +403,8 @@ class HearthlikeCalendarCard extends HTMLElement {
         }
         .pane.active { display: block; }
         .pane > * { height: 100%; }
+        /* Keep the end of each view clear of the add-event button. */
+        .pane > * { --hearthlike-view-min-height: 200px; --hearthlike-week-bottom-space: 90px; --hearthlike-month-list-inset: 90px; }
         .fab {
           position: absolute;
           right: 20px;

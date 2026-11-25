@@ -1,3 +1,33 @@
+// Styles both layouts share: event icons and the event dialogs.
+const HEARTHLIKE_WEEK_SHARED_CSS = `
+  .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; }
+  .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }
+  .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
+  .hd-row ha-icon { color:var(--primary-text-color); flex:none; width:20px; height:22px; }
+  .hd-info { font-size:14px; }
+  .hd-info a { color:var(--primary-text-color); text-decoration:none; }
+  .hd-desc { font-size:14px; color:var(--primary-text-color); white-space:normal; border-top:1px solid var(--divider-color); padding-top:16px; margin-top:16px; }
+  .hd-actions { display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--divider-color); }
+  .hd-btn { display:flex; align-items:center; gap:6px; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
+  .hd-btn ha-icon { width:18px; height:18px; }
+  .hd-btn-danger { color:#e24b4a; border-color:#e24b4a; }
+  .hd-error { color:#e24b4a; font-size:13px; min-height:16px; margin-top:8px; }
+  .hd-confirm-label { font-size:15px; color:var(--primary-text-color); margin-bottom:4px; }
+  .af-content { display:flex; flex-direction:column; gap:14px; padding:20px 24px 4px; min-width:280px; color:var(--primary-text-color); }
+  .af-row { display:flex; gap:12px; }
+  .af-row .af-field { flex:1; }
+  .af-field { display:flex; flex-direction:column; gap:4px; font-size:13px; }
+  .af-label { color:var(--secondary-text-color); }
+  .af-input { font:inherit; font-size:15px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color, #1c1c1c); color:var(--primary-text-color); }
+  .af-checkrow { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .af-error { color:#e24b4a; font-size:13px; min-height:16px; }
+  .af-actions { display:flex; justify-content:flex-end; gap:8px; padding:8px 0 4px; flex-wrap:wrap; }
+  .af-btn { font:inherit; font-size:14px; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }
+  .af-btn-text { background:none; color:var(--primary-color, #378ADD); }
+  .af-btn-filled { background:var(--primary-color, #378ADD); color:#fff; }
+  .af-btn-danger { background:#e24b4a; color:#fff; }
+`;
+
 class HearthlikeWeekCard extends HTMLElement {
   // Used when auto-discovering calendars (no "calendars" configured at all)
   // so every calendar gets a distinct, stable color without the user having
@@ -19,6 +49,10 @@ class HearthlikeWeekCard extends HTMLElement {
   setConfig(config) {
     config = config || {};
     this._config = {
+      // "list" (default): scrolling day columns, one box per event. "grid": one week as an hourly grid.
+      layout: config.layout === 'grid' ? 'grid' : 'list',
+      // list layout: how many weeks, starting with the current one, can be scrolled through.
+      weeks: Math.min(26, Math.max(1, Math.round(Number(config.weeks)) || 13)),
       hour_start: config.hour_start ?? 0,
       hour_end: config.hour_end ?? 24,
       px_per_hour: config.px_per_hour ?? 80,
@@ -65,6 +99,7 @@ class HearthlikeWeekCard extends HTMLElement {
     // already been silently reset out from under us.
     this._userScrolled = false;
     this._lastScrollTop = null;
+    this._listScroll = 0;
     this._render();
     if (!this._onCalendarUpdated) {
       this._onCalendarUpdated = () => this._forceRefresh();
@@ -164,7 +199,7 @@ class HearthlikeWeekCard extends HTMLElement {
     this._fetchedKey = key;
     const start = new Date(this._selectedWeekStart);
     const end = new Date(this._selectedWeekStart);
-    end.setDate(end.getDate() + 7);
+    end.setDate(end.getDate() + 7 * (this._config.layout === 'list' ? this._config.weeks : 1));
     const results = {};
     let failed = false;
     await Promise.all(
@@ -209,6 +244,7 @@ class HearthlikeWeekCard extends HTMLElement {
     this._pinnedThisWeek = true;
     this._events = null;
     this._userScrolled = false;
+    this._listScroll = 0;
     this._render();
     this._maybeFetch();
   }
@@ -835,12 +871,119 @@ class HearthlikeWeekCard extends HTMLElement {
     };
   }
 
+  // ---- list layout: seven day columns per row, scrolling through the coming weeks ----
+
+  // Events touching one day, all-day first then by start time. Timed events that run past midnight are
+  // clipped to the day, and a day they cover completely shows as "Entire day".
+  _listEventsForDay(day) {
+    const start = this._startOfDay(day);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    const out = [];
+    for (const e of this._rawEventsForDay(day)) {
+      if (e.isAllDay) {
+        out.push({ ...e, label: 'Entire day', order: 0, ended: false });
+        continue;
+      }
+      const s = new Date(e.startRaw);
+      const en = new Date(e.endRaw);
+      if (!(s < end && (en > start || s >= start))) continue;
+      const whole = s <= start && en >= end;
+      const from = s > start ? s : start;
+      const to = en < end ? en : end;
+      out.push({
+        ...e,
+        label: whole ? 'Entire day' : this._formatClockTime(from) + ' - ' + this._formatClockTime(to),
+        order: whole ? 0 : from.getTime(),
+        ended: en <= new Date(),
+      });
+    }
+    return out.sort((a, b) => a.order - b.order);
+  }
+
+  _renderList() {
+    const today = this._startOfDay(new Date());
+    this._dialogRecords = [];
+    const daysHtml = [];
+    for (let i = 0; i < 7 * this._config.weeks; i++) {
+      const d = new Date(this._selectedWeekStart);
+      d.setDate(d.getDate() + i);
+      const isToday = d.getTime() === today.getTime();
+      const isPastDay = d < today;
+      const events = this._listEventsForDay(d);
+      const eventsHtml = events
+        .map((e) => {
+          const ridx = this._dialogRecords.push(e) - 1;
+          return `<div class="ev${isToday && e.ended ? ' past' : ''}" part="event" data-idx="${ridx}" style="background:${this._esc(e.color)};border-color:${this._esc(e.color)}">
+            <div class="ev-time">${e.label}</div>
+            <div class="ev-title">${this._iconHtml(this._iconFor(e.entityId))}${this._esc(e.title)}</div>
+          </div>`;
+        })
+        .join('');
+      daysHtml.push(`<div class="day${isToday ? ' today' : ''}${isPastDay ? ' past-day' : ''}" part="day">
+        <div class="date"><span class="number">${d.getDate()}</span><span class="month">${this._MONTH_NAMES[d.getMonth()]}</span><span class="month short">${this._MONTH_NAMES[d.getMonth()].slice(0, 3)}</span><span class="weekday">${this._WEEKDAY_NAMES[d.getDay()].slice(0, 3)}</span></div>
+        <div class="events">${eventsHtml || (this._events ? '<div class="none">No events</div>' : '')}</div>
+      </div>`);
+    }
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; height:100%; }
+        ha-card { height:100%; min-height:var(--hearthlike-view-min-height, 400px); box-sizing:border-box; padding:0 16px; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; border:none; container-type:inline-size; }
+        .wk-head, .wk-grid { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); column-gap:15px; }
+        .wk-head { flex:none; padding-top:10px; overflow:hidden; scrollbar-gutter:stable; scrollbar-width:thin; }
+        .wk-head div { text-align:center; font-size:var(--hearthlike-day-name-size, 20px); font-weight:600; line-height:32px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .list-scroll { flex:1 1 0; min-height:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; padding:8px 0 var(--hearthlike-week-bottom-space, 16px); }
+        .wk-grid { row-gap:15px; }
+        .day { min-width:0; border-radius:4px; }
+        .day.today { background:color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
+        .day.past-day { opacity:0.3; }
+        :host([light]) .day.past-day { filter:saturate(0.45); opacity:0.65; }
+        .date { display:flex; align-items:baseline; gap:4px; line-height:35px; white-space:nowrap; overflow:hidden; }
+        .number { font-size:var(--hearthlike-day-number-size, 29px); font-weight:500; }
+        .month, .weekday { font-size:14px; }
+        .weekday, .month.short { display:none; }
+        .weekday { margin-left:auto; padding-right:4px; font-weight:600; }
+        .events { margin-top:10px; display:flex; flex-direction:column; gap:5px; }
+        .ev { box-sizing:border-box; border-radius:3px; border-left:5px solid; padding:10px 10px 10px 10px; color:#fff; cursor:pointer; overflow-wrap:anywhere; }
+        .ev.past { filter:brightness(0.5); }
+        :host([light]) .ev.past { filter:saturate(0.45); opacity:0.7; }
+        .ev-time { font-size:var(--hearthlike-event-time-size, 11.9px); font-weight:500; line-height:1.4; margin-bottom:3px; }
+        .ev-title { font-size:var(--hearthlike-event-title-size, 14px); font-weight:800; line-height:1.2; }
+        .none { border-radius:5px; padding:5px; font-size:14px; line-height:17px; background:color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
+        @container (max-width: 1099px) { .wk-head, .wk-grid { column-gap:8px; } .wk-grid { row-gap:12px; } }
+        /* Too narrow for seven columns: fewer columns, and each day carries its own weekday name. */
+        @container (max-width: 839px) { .wk-head { display:none; } .wk-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } .weekday, .month.short { display:inline; } .month:not(.short) { display:none; } }
+        @container (max-width: 559px) { .wk-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } .day.past-day { display:none; } }
+        @container (max-width: 339px) { .wk-grid { grid-template-columns:minmax(0, 1fr); } }
+        ${HEARTHLIKE_WEEK_SHARED_CSS}
+      </style>
+      <ha-card>
+        <div class="wk-head" part="header">${this._WEEKDAY_NAMES.map((n) => `<div>${n}</div>`).join('')}</div>
+        <div class="list-scroll"><div class="wk-grid">${daysHtml.join('')}</div></div>
+      </ha-card>
+    `;
+    this.shadowRoot.querySelectorAll('.ev[data-idx]').forEach((el) => {
+      el.addEventListener('click', () => this._openEventDialog(this._dialogRecords[Number(el.dataset.idx)]));
+    });
+    const scroller = this.shadowRoot.querySelector('.list-scroll');
+    const restore = () => { if (scroller.clientHeight > 0) scroller.scrollTop = this._listScroll || 0; };
+    restore();
+    scroller.addEventListener('scroll', () => { if (scroller.clientHeight > 0) this._listScroll = scroller.scrollTop; }, { passive: true });
+    if (this._resizeObserver) this._resizeObserver.disconnect();
+    this._resizeObserver = new ResizeObserver(restore);
+    this._resizeObserver.observe(scroller);
+  }
+
   _render() {
     if (!this._config || !this.shadowRoot) return;
     // While an event-detail dialog is open, skip the periodic/data-driven
     // re-render entirely rather than let a background tick or fetch nuke the
     // dialog out from under the viewer mid-read.
     if (this._dialogOpen) return;
+    if (this._config.layout === 'list') {
+      this._renderList();
+      return;
+    }
     const prevGridScroll = this.shadowRoot.querySelector('.grid-scroll');
     if (prevGridScroll) {
       this._lastScrollTop = prevGridScroll.scrollTop;
@@ -897,13 +1040,9 @@ class HearthlikeWeekCard extends HTMLElement {
     // instead of a separate badge repeated on each day.
     const colGap = 15;
     const merged = this._mergedWeekAllDayEvents(days);
-    // All-day lane height/gap scale gently with viewport size (like the
-    // font-size clamps below) so a 2-line all-day title still has room to
-    // breathe on a small tablet or a big wall display, instead of being a
-    // fixed pixel size that only looks right at one screen size.
-    const vmin = Math.min(window.innerWidth, window.innerHeight) / 100;
-    const laneHeight = Math.max(64, Math.min(92, Math.round(vmin * 6.9)));
-    const laneGap = Math.max(4, Math.min(7, Math.round(vmin * 0.42)));
+    // Lane height fits the "Entire day" box of the wall display: two lines of title plus padding.
+    const laneHeight = 57;
+    const laneGap = 5;
     const alldayHeight = merged.laneCount ? merged.laneCount * laneHeight + (merged.laneCount - 1) * laneGap : 0;
     this._dialogRecords = [];
     const alldayItemsHtml = merged.items
@@ -1001,7 +1140,7 @@ class HearthlikeWeekCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         :host { display:block; height:100%; }
-        ha-card { height:100%; min-height:200px; box-sizing:border-box; padding:12px 16px 12px; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; }
+        ha-card { height:100%; min-height:var(--hearthlike-view-min-height, 400px); box-sizing:border-box; padding:12px 16px 12px; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; }
         .topbar { flex:none; display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px; }
         .nav { background:none; border:none; color:var(--secondary-text-color); font-size:clamp(16px, 1.8vmin, 26px); line-height:1; cursor:pointer; padding:4px 8px; }
         .nav:hover { color:var(--primary-text-color); }
@@ -1013,26 +1152,26 @@ class HearthlikeWeekCard extends HTMLElement {
         .headers-flex { flex:1; display:flex; gap:15px; }
         .col-header { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:2px; padding:2px 4px; border-radius:8px; }
         .col-header.today { background:color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
-        .day-name { font-size:clamp(19px, 2.4vmin, 29px); font-weight:600; letter-spacing:0.03em; text-transform:uppercase; color:var(--secondary-text-color); }
-        .day-num { font-size:clamp(27px, 3.5vmin, 43px); font-weight:500; color:var(--primary-text-color); }
+        .day-name { font-size:var(--hearthlike-day-name-size, 20px); font-weight:600; letter-spacing:0.03em; text-transform:uppercase; color:var(--secondary-text-color); }
+        .day-num { font-size:var(--hearthlike-day-number-size, 29px); font-weight:500; color:var(--primary-text-color); }
         .allday-row { flex:none; display:flex; margin-bottom:6px; }
         .allday-row .spacer { width:52px; flex:none; }
         .allday-label { display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.1; font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }
         .allday-flex { flex:1; position:relative; }
-        .allday-box { position:absolute; border-radius:3px; box-sizing:border-box; font-size:clamp(14px, 1.5vmin, 20px); font-weight:800; line-height:1.25; padding:clamp(4px, 0.5vmin, 6px); white-space:normal; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; text-overflow:ellipsis; color:#fff; }
+        .allday-box { position:absolute; border-radius:3px; box-sizing:border-box; font-size:var(--hearthlike-event-title-size, 14px); font-weight:800; line-height:1.25; padding:10px 10px 10px 15px; white-space:normal; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; text-overflow:ellipsis; color:#fff; }
         .allday-box.past-day { opacity:0.3; }
-        .grid-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
+        .grid-scroll { flex:1 1 0; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
         .grid-wrap { display:flex; position:relative; }
         .hour-col { position:relative; width:52px; flex:none; }
-        .hour-label { position:absolute; right:8px; transform:translateY(4px); font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }
+        .hour-label { position:absolute; right:8px; white-space:nowrap; transform:translateY(4px); font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }
         .cols-wrap { position:relative; flex:1; display:flex; gap:15px; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }
         .hour-lines { position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; z-index:0; }
         .hline { position:absolute; left:0; right:0; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }
         .col-body { position:relative; flex:1; min-width:0; z-index:1; }
         .col-body.today { background:color-mix(in srgb, var(--primary-text-color) 3%, transparent); border-radius:6px; }
-        .event { position:absolute; border-radius:3px; padding:clamp(4px, 0.5vmin, 6px); box-sizing:border-box; overflow:hidden; }
-        .event-title { font-size:clamp(14px, 1.5vmin, 20px); font-weight:800; line-height:1.2; color:#fff; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; white-space:normal; overflow:hidden; text-overflow:ellipsis; }
-        .event-time { font-size:clamp(11.9px, 1.3vmin, 17px); font-weight:500; color:rgba(255,255,255,0.85); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+        .event { position:absolute; border-radius:3px; padding:5px 8px 5px 10px; box-sizing:border-box; overflow:hidden; }
+        .event-title { font-size:var(--hearthlike-event-title-size, 14px); font-weight:800; line-height:1.2; color:#fff; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; white-space:normal; overflow:hidden; text-overflow:ellipsis; }
+        .event-time { font-size:var(--hearthlike-event-time-size, 11.9px); font-weight:500; color:rgba(255,255,255,0.85); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
         .now-line { position:absolute; left:0; right:0; height:0; border-top:2px solid #e24b4a; z-index:5; }
         .now-dot { position:absolute; left:-4px; top:-4px; width:8px; height:8px; border-radius:50%; background:#e24b4a; }
         .col-header.past-day { opacity:0.3; }
@@ -1041,32 +1180,7 @@ class HearthlikeWeekCard extends HTMLElement {
         :host([light]) .event.past { filter:saturate(0.45); opacity:0.7; }
         :host([light]) .col-body.past-day { filter:saturate(0.45); opacity:0.65; }
         :host([light]) .allday-box.past-day { filter:saturate(0.45); opacity:0.65; }
-        .event, .allday-box { cursor:pointer; } .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; }
-        .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }
-        .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
-        .hd-row ha-icon { color:var(--primary-text-color); flex:none; width:20px; height:22px; }
-        .hd-info { font-size:14px; }
-        .hd-info a { color:var(--primary-text-color); text-decoration:none; }
-        .hd-desc { font-size:14px; color:var(--primary-text-color); white-space:normal; border-top:1px solid var(--divider-color); padding-top:16px; margin-top:16px; }
-        .hd-actions { display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--divider-color); }
-        .hd-btn { display:flex; align-items:center; gap:6px; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
-        .hd-btn ha-icon { width:18px; height:18px; }
-        .hd-btn-danger { color:#e24b4a; border-color:#e24b4a; }
-        .hd-error { color:#e24b4a; font-size:13px; min-height:16px; margin-top:8px; }
-        .hd-confirm-label { font-size:15px; color:var(--primary-text-color); margin-bottom:4px; }
-        .af-content { display:flex; flex-direction:column; gap:14px; padding:20px 24px 4px; min-width:280px; color:var(--primary-text-color); }
-        .af-row { display:flex; gap:12px; }
-        .af-row .af-field { flex:1; }
-        .af-field { display:flex; flex-direction:column; gap:4px; font-size:13px; }
-        .af-label { color:var(--secondary-text-color); }
-        .af-input { font:inherit; font-size:15px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color, #1c1c1c); color:var(--primary-text-color); }
-        .af-checkrow { display:flex; align-items:center; gap:8px; font-size:14px; }
-        .af-error { color:#e24b4a; font-size:13px; min-height:16px; }
-        .af-actions { display:flex; justify-content:flex-end; gap:8px; padding:8px 0 4px; flex-wrap:wrap; }
-        .af-btn { font:inherit; font-size:14px; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }
-        .af-btn-text { background:none; color:var(--primary-color, #378ADD); }
-        .af-btn-filled { background:var(--primary-color, #378ADD); color:#fff; }
-        .af-btn-danger { background:#e24b4a; color:#fff; }
+        .event, .allday-box { cursor:pointer; } ${HEARTHLIKE_WEEK_SHARED_CSS}
       </style>
       <ha-card>
         <div class="topbar">
@@ -1148,7 +1262,7 @@ if (!window.customCards.some((c) => c.type === 'hearthlike-week-card'))
   window.customCards.push({
   type: 'hearthlike-week-card',
   name: 'HearthLike Week Card',
-  description: 'Sunday-start weekly hourly grid view, inspired by Hearth Display',
+  description: 'Sunday-start week view: day columns over several weeks, or an hourly grid',
 });
 
 // Visual GUI editor for hearthlike-week-card's "calendars" list - same pattern as
@@ -1182,6 +1296,16 @@ class HearthlikeWeekCardEditor extends HTMLElement {
     calendars[idx] = { ...calendars[idx], ...patch };
     this._config = { ...this._config, calendars };
     this._emitChange();
+  }
+
+  // Set a top-level option, or drop it when empty so the default applies.
+  _setOption(key, value) {
+    const config = { ...this._config };
+    if (value === '') delete config[key];
+    else config[key] = value;
+    this._config = config;
+    this._emitChange();
+    this._render();
   }
 
   _addCalendar() {
@@ -1228,8 +1352,19 @@ class HearthlikeWeekCardEditor extends HTMLElement {
         .hde-remove:hover { color:#e24b4a; }
         .hde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
         .hde-hint { font-size:12px; color:var(--secondary-text-color); }
+        .hde-field { display:flex; flex-direction:column; gap:4px; font-size:14px; color:var(--primary-text-color); }
+        .hde-field select, .hde-field input { font:inherit; padding:8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
       </style>
       <div class="hde-wrap">
+        <label class="hde-field">Layout
+          <select id="hde-layout">
+            <option value="list" ${this._config.layout === 'grid' ? '' : 'selected'}>Day list, several weeks (default)</option>
+            <option value="grid" ${this._config.layout === 'grid' ? 'selected' : ''}>Hourly grid, one week</option>
+          </select>
+        </label>
+        ${this._config.layout === 'grid' ? '' : `<label class="hde-field">Weeks to show (1-26)
+          <input id="hde-weeks" type="number" min="1" max="26" placeholder="13" value="${Number(this._config.weeks) || ''}" />
+        </label>`}
         <div class="hde-hint">Leave "calendars" empty (remove all rows) to auto-show every calendar on the system. Add rows to pick specific calendars and colors.</div>
         ${calendars.length ? rowsHtml : '<div class="hde-empty">No calendars configured — the card will auto-discover every calendar.</div>'}
         <button class="hde-add" id="hde-add">+ Add calendar</button>
@@ -1260,6 +1395,9 @@ class HearthlikeWeekCardEditor extends HTMLElement {
     });
 
     this.shadowRoot.getElementById('hde-add').addEventListener('click', () => this._addCalendar());
+    this.shadowRoot.getElementById('hde-layout').addEventListener('change', (ev) => this._setOption('layout', ev.target.value === 'grid' ? 'grid' : ''));
+    const weeks = this.shadowRoot.getElementById('hde-weeks');
+    if (weeks) weeks.addEventListener('change', (ev) => this._setOption('weeks', Number(ev.target.value) || ''));
   }
 }
 

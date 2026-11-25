@@ -117,43 +117,44 @@ class HearthlikeDashboardCard extends HTMLElement {
         /* Every size and colour below can be overridden with the --hearthlike-* variables (set them from a theme,
            card-mod, or the card's own "style" option), or restyle anything with "style". See the README. */
         :host { display: block; height: var(--hearthlike-height, calc(100dvh - var(--header-height, 56px))); }
-        .root { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; overflow: hidden;
+        .root { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; overflow-x: hidden; overflow-y: auto;
                 background: var(--hearthlike-background, var(--primary-background-color));
                 color: var(--hearthlike-text-color, var(--primary-text-color)); }
         .header { display: flex; align-items: center; justify-content: space-between; flex: none;
-                  font-size: var(--hearthlike-header-font-size, clamp(24px, 5vmin, 48px));
-                  padding: var(--hearthlike-header-padding, clamp(4px, 0.8vmin, 12px) clamp(14px, 2.5vmin, 32px)); }
-        .weather { display: flex; align-items: center; gap: 0.25em; font-weight: 500; line-height: 1.2; }
+                  font-size: var(--hearthlike-header-font-size, clamp(24px, 4.85vmin, 42px)); line-height: 1;
+                  padding: var(--hearthlike-header-padding, clamp(4px, 0.8vmin, 7px) 8px clamp(4px, 0.8vmin, 7px) 15px); }
+        .weather { display: flex; align-items: center; gap: 0.17em; font-weight: 900; }
         .weather.tappable { cursor: pointer; }
         .weather ha-icon { --mdc-icon-size: 1em; display: flex; }
-        .clock { margin-left: auto; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+        .clock { margin-left: auto; font-weight: 900; font-variant-numeric: tabular-nums; }
         .people { display: flex; justify-content: space-evenly; align-items: flex-start; flex: none;
                   gap: var(--hearthlike-people-gap, 8px);
-                  padding: var(--hearthlike-people-padding, clamp(6px, 1vmin, 16px) clamp(12px, 4vmin, 80px)); }
-        .person { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; }
+                  padding: var(--hearthlike-people-padding, clamp(6px, 3.45vmin, 30px) min(80px, 5.6vw) clamp(6px, 4.7vmin, 41px)); }
+        .person { display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 1.25vmin, 11px); min-width: 0; flex: 1 1 0; }
         .avatar { position: relative; flex: none; box-sizing: border-box; border-radius: 50%;
-                  width: var(--hearthlike-avatar-size, clamp(56px, 11vmin, 104px));
-                  height: var(--hearthlike-avatar-size, clamp(56px, 11vmin, 104px));
-                  border: var(--hearthlike-ring-width, 3px) solid var(--ring, var(--primary-color));
+                  width: var(--hearthlike-avatar-size, clamp(56px, 14vmin, 122px));
+                  height: var(--hearthlike-avatar-size, clamp(56px, 14vmin, 122px));
+                  border: var(--hearthlike-ring-width, 5px) solid var(--ring, var(--primary-color));
                   background: var(--secondary-background-color); display: flex; align-items: center; justify-content: center;
-                  font-size: var(--hearthlike-avatar-font-size, clamp(22px, 4.5vmin, 40px)); font-weight: 600; line-height: 1; }
+                  font-size: var(--hearthlike-avatar-font-size, clamp(22px, 5.5vmin, 48px)); font-weight: 600; line-height: 1; }
         .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-        .badge { position: absolute; top: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%;
+        .badge { position: absolute; top: -3px; right: -3px; width: clamp(18px, 3.45vmin, 30px); height: clamp(18px, 3.45vmin, 30px); border-radius: 50%;
                  display: flex; align-items: center; justify-content: center; color: #fff;
                  background: var(--badge, var(--secondary-text-color)); }
-        .badge ha-icon { --mdc-icon-size: 14px; display: flex; }
+        .badge ha-icon { --mdc-icon-size: clamp(12px, 2.3vmin, 20px); display: flex; }
         .pname { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
-                 font-size: var(--hearthlike-name-font-size, clamp(14px, 2.2vmin, 22px)); font-weight: 500;
+                 font-size: var(--hearthlike-name-font-size, clamp(14px, 2.45vmin, 21px)); font-weight: 600; line-height: 0.95; padding-bottom: 1px;
                  color: var(--ring, var(--primary-text-color)); }
-        .cal { position: relative; flex: 1; min-height: 0; }
+        /* On screens too short for everything, the calendar keeps a usable height and the page scrolls. */
+        .cal { position: relative; flex: 1 0 var(--hearthlike-calendar-min-height, min(420px, 85dvh)); }
         .cal > * { position: absolute; inset: 0; display: block; }
         .buttons { display: flex; align-items: stretch; flex: none; gap: 1px; overflow-x: auto; }
         .btn { flex: 1 0 64px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px;
-               padding: var(--hearthlike-button-padding, 12px 4px); cursor: pointer; border: 0; font: inherit; min-width: 0;
+               padding: var(--hearthlike-button-padding, clamp(5px, 1.4vmin, 12px) 4px); cursor: pointer; border: 0; font: inherit; min-width: 0;
                background: var(--hearthlike-button-background, var(--card-background-color, var(--secondary-background-color)));
                color: var(--hearthlike-button-color, var(--primary-text-color)); }
         .btn:active { filter: brightness(1.2); }
-        .btn ha-icon { --mdc-icon-size: var(--hearthlike-button-icon-size, 27px); display: flex; }
+        .btn ha-icon { --mdc-icon-size: var(--hearthlike-button-icon-size, clamp(20px, 3.1vmin, 27px)); display: flex; }
         .btn.on ha-icon { color: var(--hearthlike-button-active-color, var(--state-light-active-color, #ffc107)); }
         .btn.off, .btn.unavailable { color: var(--secondary-text-color); }
         .btn.unavailable { opacity: 0.6; }

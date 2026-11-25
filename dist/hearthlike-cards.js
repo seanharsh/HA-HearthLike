@@ -376,10 +376,14 @@ class HearthlikeCalendarCard extends HTMLElement {
         }
         .tab {
           flex: 1;
-          text-align: center;
-          padding: clamp(8px, 1.2vmin, 14px) 0;
-          font-size: clamp(11px, 1.3vmin, 15px);
-          letter-spacing: 0.05em;
+          height: clamp(34px, 5.5vmin, 48px);
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: var(--hearthlike-tab-font-size, 14px);
+          font-weight: 500;
+          letter-spacing: 0.0893em;
           text-transform: uppercase;
           color: var(--secondary-text-color, rgba(255, 255, 255, 0.55));
           cursor: pointer;
@@ -403,6 +407,8 @@ class HearthlikeCalendarCard extends HTMLElement {
         }
         .pane.active { display: block; }
         .pane > * { height: 100%; }
+        /* Keep the end of each view clear of the add-event button. */
+        .pane > * { --hearthlike-view-min-height: 200px; --hearthlike-week-bottom-space: 90px; --hearthlike-month-list-inset: 90px; }
         .fab {
           position: absolute;
           right: 20px;
@@ -890,43 +896,44 @@ class HearthlikeDashboardCard extends HTMLElement {
         /* Every size and colour below can be overridden with the --hearthlike-* variables (set them from a theme,
            card-mod, or the card's own "style" option), or restyle anything with "style". See the README. */
         :host { display: block; height: var(--hearthlike-height, calc(100dvh - var(--header-height, 56px))); }
-        .root { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; overflow: hidden;
+        .root { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; overflow-x: hidden; overflow-y: auto;
                 background: var(--hearthlike-background, var(--primary-background-color));
                 color: var(--hearthlike-text-color, var(--primary-text-color)); }
         .header { display: flex; align-items: center; justify-content: space-between; flex: none;
-                  font-size: var(--hearthlike-header-font-size, clamp(24px, 5vmin, 48px));
-                  padding: var(--hearthlike-header-padding, clamp(4px, 0.8vmin, 12px) clamp(14px, 2.5vmin, 32px)); }
-        .weather { display: flex; align-items: center; gap: 0.25em; font-weight: 500; line-height: 1.2; }
+                  font-size: var(--hearthlike-header-font-size, clamp(24px, 4.85vmin, 42px)); line-height: 1;
+                  padding: var(--hearthlike-header-padding, clamp(4px, 0.8vmin, 7px) 8px clamp(4px, 0.8vmin, 7px) 15px); }
+        .weather { display: flex; align-items: center; gap: 0.17em; font-weight: 900; }
         .weather.tappable { cursor: pointer; }
         .weather ha-icon { --mdc-icon-size: 1em; display: flex; }
-        .clock { margin-left: auto; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+        .clock { margin-left: auto; font-weight: 900; font-variant-numeric: tabular-nums; }
         .people { display: flex; justify-content: space-evenly; align-items: flex-start; flex: none;
                   gap: var(--hearthlike-people-gap, 8px);
-                  padding: var(--hearthlike-people-padding, clamp(6px, 1vmin, 16px) clamp(12px, 4vmin, 80px)); }
-        .person { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; }
+                  padding: var(--hearthlike-people-padding, clamp(6px, 3.45vmin, 30px) min(80px, 5.6vw) clamp(6px, 4.7vmin, 41px)); }
+        .person { display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 1.25vmin, 11px); min-width: 0; flex: 1 1 0; }
         .avatar { position: relative; flex: none; box-sizing: border-box; border-radius: 50%;
-                  width: var(--hearthlike-avatar-size, clamp(56px, 11vmin, 104px));
-                  height: var(--hearthlike-avatar-size, clamp(56px, 11vmin, 104px));
-                  border: var(--hearthlike-ring-width, 3px) solid var(--ring, var(--primary-color));
+                  width: var(--hearthlike-avatar-size, clamp(56px, 14vmin, 122px));
+                  height: var(--hearthlike-avatar-size, clamp(56px, 14vmin, 122px));
+                  border: var(--hearthlike-ring-width, 5px) solid var(--ring, var(--primary-color));
                   background: var(--secondary-background-color); display: flex; align-items: center; justify-content: center;
-                  font-size: var(--hearthlike-avatar-font-size, clamp(22px, 4.5vmin, 40px)); font-weight: 600; line-height: 1; }
+                  font-size: var(--hearthlike-avatar-font-size, clamp(22px, 5.5vmin, 48px)); font-weight: 600; line-height: 1; }
         .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-        .badge { position: absolute; top: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%;
+        .badge { position: absolute; top: -3px; right: -3px; width: clamp(18px, 3.45vmin, 30px); height: clamp(18px, 3.45vmin, 30px); border-radius: 50%;
                  display: flex; align-items: center; justify-content: center; color: #fff;
                  background: var(--badge, var(--secondary-text-color)); }
-        .badge ha-icon { --mdc-icon-size: 14px; display: flex; }
+        .badge ha-icon { --mdc-icon-size: clamp(12px, 2.3vmin, 20px); display: flex; }
         .pname { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
-                 font-size: var(--hearthlike-name-font-size, clamp(14px, 2.2vmin, 22px)); font-weight: 500;
+                 font-size: var(--hearthlike-name-font-size, clamp(14px, 2.45vmin, 21px)); font-weight: 600; line-height: 0.95; padding-bottom: 1px;
                  color: var(--ring, var(--primary-text-color)); }
-        .cal { position: relative; flex: 1; min-height: 0; }
+        /* On screens too short for everything, the calendar keeps a usable height and the page scrolls. */
+        .cal { position: relative; flex: 1 0 var(--hearthlike-calendar-min-height, min(420px, 85dvh)); }
         .cal > * { position: absolute; inset: 0; display: block; }
         .buttons { display: flex; align-items: stretch; flex: none; gap: 1px; overflow-x: auto; }
         .btn { flex: 1 0 64px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px;
-               padding: var(--hearthlike-button-padding, 12px 4px); cursor: pointer; border: 0; font: inherit; min-width: 0;
+               padding: var(--hearthlike-button-padding, clamp(5px, 1.4vmin, 12px) 4px); cursor: pointer; border: 0; font: inherit; min-width: 0;
                background: var(--hearthlike-button-background, var(--card-background-color, var(--secondary-background-color)));
                color: var(--hearthlike-button-color, var(--primary-text-color)); }
         .btn:active { filter: brightness(1.2); }
-        .btn ha-icon { --mdc-icon-size: var(--hearthlike-button-icon-size, 27px); display: flex; }
+        .btn ha-icon { --mdc-icon-size: var(--hearthlike-button-icon-size, clamp(20px, 3.1vmin, 27px)); display: flex; }
         .btn.on ha-icon { color: var(--hearthlike-button-active-color, var(--state-light-active-color, #ffc107)); }
         .btn.off, .btn.unavailable { color: var(--secondary-text-color); }
         .btn.unavailable { opacity: 0.6; }
@@ -2012,7 +2019,7 @@ class HearthlikeDayCard extends HTMLElement {
     for (let e = a; e <= i; e++) p.push(e);
     const u = n.map((e) => '\n      <div class="col-header"></div>').join(""),
       f = this._mergedAllDayEvents(),
-      _ = f.laneCount ? 70 * f.laneCount + 5 * (f.laneCount - 1) : 0;
+      _ = f.laneCount ? 57 * f.laneCount + 5 * (f.laneCount - 1) : 0;
     this._dialogRecords = [];
     const m = f.items
         .map((e) => {
@@ -2036,15 +2043,7 @@ class HearthlikeDayCard extends HTMLElement {
               recurrenceId: e.recurrenceId,
               rrule: e.rrule,
             }),
-            `\n      <div class="allday-box" data-idx="${i}" style="top:${(() => {
-              const v = Math.min(window.innerWidth, window.innerHeight) / 100;
-              const lh = Math.max(64, Math.min(92, Math.round(v * 6.9)));
-              const lg = Math.max(4, Math.min(7, Math.round(v * 0.42)));
-              return (lh + lg) * e.lane;
-            })()}px;left:${t};width:${a};height:${(() => {
-              const v = Math.min(window.innerWidth, window.innerHeight) / 100;
-              return Math.max(64, Math.min(92, Math.round(v * 6.9)));
-            })()}px;background:${e.color}">\n        ${this._iconHtml(this._iconFor(e.entityId))}${this._esc(e.title)}\n      </div>`
+            `\n      <div class="allday-box" data-idx="${i}" style="top:${62 * e.lane}px;left:${t};width:${a};height:57px;background:${e.color}">\n        ${this._iconHtml(this._iconFor(e.entityId))}${this._esc(e.title)}\n      </div>`
           );
         })
         .join(""),
@@ -2089,7 +2088,7 @@ class HearthlikeDayCard extends HTMLElement {
     if (this._pinnedToday && h >= 60 * a && h <= 60 * i) {
       b = `<div class="now-line" style="top:${((h - 60 * a) / 60) * o}px"><span class="now-dot"></span></div>`;
     }
-    (this.shadowRoot.innerHTML = `\n      <style>\n        :host { display:block; height:100%; }\n        ha-card { height:100%; min-height:200px; box-sizing:border-box; padding:12px 16px 12px; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; }\n        .topbar { flex:none; display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px; }\n        .nav { background:none; border:none; color:var(--secondary-text-color); font-size:clamp(16px, 1.8vmin, 26px); line-height:1; cursor:pointer; padding:4px 8px; }\n        .nav:hover { color:var(--primary-text-color); }\n        .date-block { display:flex; align-items:center; gap:10px; }\n        .date-label { font-size:clamp(16px, 1.8vmin, 26px); font-weight:500; color:var(--primary-text-color); }\n        .today-btn { font-size:clamp(9px, 1vmin, 13px); padding:2px 10px; border-radius:12px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }\n        .headers-row { flex:none; display:flex; margin-bottom:4px; align-items:center; }\n        .headers-row .spacer { width:52px; flex:none; }\n        .headers-flex { flex:1; display:flex; gap:15px; }\n        .col-header { flex:1; min-width:0; display:flex; align-items:center; justify-content:center; gap:6px; padding:2px 8px; }\n        .allday-row { flex:none; display:flex; margin-bottom:6px; }\n        .allday-row .spacer { width:52px; flex:none; }\n        .allday-label { display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.1; font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }\n        .allday-flex { flex:1; position:relative; }\n        .allday-box { position:absolute; border-radius:3px; box-sizing:border-box; font-size:clamp(14px, 1.5vmin, 20px); font-weight:800; line-height:1.25; padding:clamp(4px, 0.5vmin, 6px); white-space:normal; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; text-overflow:ellipsis; color:#fff; }\n        .dot { width:8px; height:8px; border-radius:50%; flex:none; }\n        .col-name { font-size:clamp(11px, 1.3vmin, 16px); font-weight:500; color:var(--primary-text-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }\n        .grid-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }\n        .grid-wrap { display:flex; position:relative; }\n        .hour-col { position:relative; width:52px; flex:none; }\n        .hour-label { position:absolute; right:8px; transform:translateY(4px); font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }\n        .cols-wrap { position:relative; flex:1; display:flex; gap:15px; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }\n        .hour-lines { position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; z-index:0; }\n        .hline { position:absolute; left:0; right:0; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }\n        .col-body { position:relative; flex:1; min-width:0; z-index:1; }\n        .event { position:absolute; border-radius:3px; padding:clamp(4px, 0.5vmin, 6px); box-sizing:border-box; overflow:hidden; }\n        .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; } .event-title { font-size:clamp(14px, 1.5vmin, 20px); font-weight:800; line-height:1.25; color:#fff; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; white-space:normal; overflow:hidden; text-overflow:ellipsis; }\n        .event-time { font-size:clamp(11.9px, 1.3vmin, 17px); font-weight:500; color:rgba(255,255,255,0.85); margin-bottom:2px; }\n        .now-line { position:absolute; left:0; right:0; height:0; border-top:2px solid #e24b4a; z-index:5; }\n        .now-dot { position:absolute; left:-4px; top:-4px; width:8px; height:8px; border-radius:50%; background:#e24b4a; }\n        .day-content { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }\n        .day-content.past-day { opacity:0.3; }\n        .event.past { filter:brightness(0.5); }\n        :host([light]) .event.past { filter:saturate(0.45); opacity:0.7; }\n        :host([light]) .day-content.past-day { filter:saturate(0.45); opacity:0.65; }\n        .event, .allday-box { cursor:pointer; }\n        .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }\n        .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }\n        .hd-row ha-icon { color:var(--primary-text-color); flex:none; width:20px; height:22px; }\n        .hd-info { font-size:14px; }\n        .hd-info a { color:var(--primary-text-color); text-decoration:none; }\n        .hd-desc { font-size:14px; color:var(--primary-text-color); white-space:normal; border-top:1px solid var(--divider-color); padding-top:16px; margin-top:16px; }\n        .hd-actions { display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--divider-color); }\n        .hd-btn { display:flex; align-items:center; gap:6px; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }\n        .hd-btn ha-icon { width:18px; height:18px; }\n        .hd-btn-danger { color:#e24b4a; border-color:#e24b4a; }\n        .hd-error { color:#e24b4a; font-size:13px; min-height:16px; margin-top:8px; }\n        .hd-confirm-label { font-size:15px; color:var(--primary-text-color); margin-bottom:4px; }\n        .af-content { display:flex; flex-direction:column; gap:14px; padding:20px 24px 4px; min-width:280px; color:var(--primary-text-color); }\n        .af-row { display:flex; gap:12px; }\n        .af-row .af-field { flex:1; }\n        .af-field { display:flex; flex-direction:column; gap:4px; font-size:13px; }\n        .af-label { color:var(--secondary-text-color); }\n        .af-input { font:inherit; font-size:15px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color, #1c1c1c); color:var(--primary-text-color); }\n        .af-checkrow { display:flex; align-items:center; gap:8px; font-size:14px; }\n        .af-error { color:#e24b4a; font-size:13px; min-height:16px; }\n        .af-actions { display:flex; justify-content:flex-end; gap:8px; padding:8px 0 4px; flex-wrap:wrap; }\n        .af-btn { font:inherit; font-size:14px; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }\n        .af-btn-text { background:none; color:var(--primary-color, #378ADD); }\n        .af-btn-filled { background:var(--primary-color, #378ADD); color:#fff; }\n        .af-btn-danger { background:#e24b4a; color:#fff; }\n      </style>\n      <ha-card>\n        <div class="topbar">\n          <button class="nav" id="prev">&#8249;</button>\n          <div class="date-block">\n            <div class="date-label">${s}</div>\n            ${this._pinnedToday ? "" : '<button class="today-btn" id="today">Today</button>'}\n          </div>\n          <button class="nav" id="next">&#8250;</button>\n        </div>\n        <div class="day-content${l ? " past-day" : ""}">\n          <div class="headers-row">\n            <div class="spacer"></div>\n            <div class="headers-flex">${u}</div>\n          </div>\n          ${x}\n          <div class="grid-scroll">\n            <div class="grid-wrap">\n              <div class="hour-col" style="height:${r}px">${v}</div>\n              <div class="cols-wrap" style="height:${r}px">\n                <div class="hour-lines">${g}</div>\n                ${y}\n                ${b}\n              </div>\n            </div>\n          </div>\n        </div>\n      </ha-card>\n    `),
+    (this.shadowRoot.innerHTML = `\n      <style>\n        :host { display:block; height:100%; }\n        ha-card { height:100%; min-height:var(--hearthlike-view-min-height, 400px); box-sizing:border-box; padding:12px 16px 12px; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; }\n        .topbar { flex:none; display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px; }\n        .nav { background:none; border:none; color:var(--secondary-text-color); font-size:clamp(16px, 1.8vmin, 26px); line-height:1; cursor:pointer; padding:4px 8px; }\n        .nav:hover { color:var(--primary-text-color); }\n        .date-block { display:flex; align-items:center; gap:10px; }\n        .date-label { font-size:clamp(16px, 1.8vmin, 26px); font-weight:500; color:var(--primary-text-color); }\n        .today-btn { font-size:clamp(9px, 1vmin, 13px); padding:2px 10px; border-radius:12px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }\n        .headers-row { flex:none; display:flex; margin-bottom:4px; align-items:center; }\n        .headers-row .spacer { width:52px; flex:none; }\n        .headers-flex { flex:1; display:flex; gap:15px; }\n        .col-header { flex:1; min-width:0; display:flex; align-items:center; justify-content:center; gap:6px; padding:2px 8px; }\n        .allday-row { flex:none; display:flex; margin-bottom:6px; }\n        .allday-row .spacer { width:52px; flex:none; }\n        .allday-label { display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.1; font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }\n        .allday-flex { flex:1; position:relative; }\n        .allday-box { position:absolute; border-radius:3px; box-sizing:border-box; font-size:var(--hearthlike-event-title-size, 14px); font-weight:800; line-height:1.25; padding:10px 10px 10px 15px; white-space:normal; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; text-overflow:ellipsis; color:#fff; }\n        .dot { width:8px; height:8px; border-radius:50%; flex:none; }\n        .col-name { font-size:clamp(11px, 1.3vmin, 16px); font-weight:500; color:var(--primary-text-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }\n        .grid-scroll { flex:1 1 0; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }\n        .grid-wrap { display:flex; position:relative; }\n        .hour-col { position:relative; width:52px; flex:none; }\n        .hour-label { position:absolute; right:8px; white-space:nowrap; transform:translateY(4px); font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }\n        .cols-wrap { position:relative; flex:1; display:flex; gap:15px; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }\n        .hour-lines { position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; z-index:0; }\n        .hline { position:absolute; left:0; right:0; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }\n        .col-body { position:relative; flex:1; min-width:0; z-index:1; }\n        .event { position:absolute; border-radius:3px; padding:5px 8px 5px 10px; box-sizing:border-box; overflow:hidden; }\n        .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; } .event-title { font-size:var(--hearthlike-event-title-size, 14px); font-weight:800; line-height:1.25; color:#fff; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; white-space:normal; overflow:hidden; text-overflow:ellipsis; }\n        .event-time { font-size:var(--hearthlike-event-time-size, 11.9px); font-weight:500; color:rgba(255,255,255,0.85); margin-bottom:2px; }\n        .now-line { position:absolute; left:0; right:0; height:0; border-top:2px solid #e24b4a; z-index:5; }\n        .now-dot { position:absolute; left:-4px; top:-4px; width:8px; height:8px; border-radius:50%; background:#e24b4a; }\n        .day-content { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }\n        .day-content.past-day { opacity:0.3; }\n        .event.past { filter:brightness(0.5); }\n        :host([light]) .event.past { filter:saturate(0.45); opacity:0.7; }\n        :host([light]) .day-content.past-day { filter:saturate(0.45); opacity:0.65; }\n        .event, .allday-box { cursor:pointer; }\n        .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }\n        .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }\n        .hd-row ha-icon { color:var(--primary-text-color); flex:none; width:20px; height:22px; }\n        .hd-info { font-size:14px; }\n        .hd-info a { color:var(--primary-text-color); text-decoration:none; }\n        .hd-desc { font-size:14px; color:var(--primary-text-color); white-space:normal; border-top:1px solid var(--divider-color); padding-top:16px; margin-top:16px; }\n        .hd-actions { display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--divider-color); }\n        .hd-btn { display:flex; align-items:center; gap:6px; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }\n        .hd-btn ha-icon { width:18px; height:18px; }\n        .hd-btn-danger { color:#e24b4a; border-color:#e24b4a; }\n        .hd-error { color:#e24b4a; font-size:13px; min-height:16px; margin-top:8px; }\n        .hd-confirm-label { font-size:15px; color:var(--primary-text-color); margin-bottom:4px; }\n        .af-content { display:flex; flex-direction:column; gap:14px; padding:20px 24px 4px; min-width:280px; color:var(--primary-text-color); }\n        .af-row { display:flex; gap:12px; }\n        .af-row .af-field { flex:1; }\n        .af-field { display:flex; flex-direction:column; gap:4px; font-size:13px; }\n        .af-label { color:var(--secondary-text-color); }\n        .af-input { font:inherit; font-size:15px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color, #1c1c1c); color:var(--primary-text-color); }\n        .af-checkrow { display:flex; align-items:center; gap:8px; font-size:14px; }\n        .af-error { color:#e24b4a; font-size:13px; min-height:16px; }\n        .af-actions { display:flex; justify-content:flex-end; gap:8px; padding:8px 0 4px; flex-wrap:wrap; }\n        .af-btn { font:inherit; font-size:14px; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }\n        .af-btn-text { background:none; color:var(--primary-color, #378ADD); }\n        .af-btn-filled { background:var(--primary-color, #378ADD); color:#fff; }\n        .af-btn-danger { background:#e24b4a; color:#fff; }\n      </style>\n      <ha-card>\n        <div class="topbar">\n          <button class="nav" id="prev">&#8249;</button>\n          <div class="date-block">\n            <div class="date-label">${s}</div>\n            ${this._pinnedToday ? "" : '<button class="today-btn" id="today">Today</button>'}\n          </div>\n          <button class="nav" id="next">&#8250;</button>\n        </div>\n        <div class="day-content${l ? " past-day" : ""}">\n          <div class="headers-row">\n            <div class="spacer"></div>\n            <div class="headers-flex">${u}</div>\n          </div>\n          ${x}\n          <div class="grid-scroll">\n            <div class="grid-wrap">\n              <div class="hour-col" style="height:${r}px">${v}</div>\n              <div class="cols-wrap" style="height:${r}px">\n                <div class="hour-lines">${g}</div>\n                ${y}\n                ${b}\n              </div>\n            </div>\n          </div>\n        </div>\n      </ha-card>\n    `),
       this.shadowRoot.getElementById("prev").addEventListener("click", () => this._shiftDay(-1)),
       this.shadowRoot.getElementById("next").addEventListener("click", () => this._shiftDay(1));
     const w = this.shadowRoot.getElementById("today");
@@ -2402,6 +2401,36 @@ console.info(
 
 // ---- www/hearthlike-cards/hearthlike-month-card.js ----
 {
+// Styles both layouts share: the top bar, event icons and the event dialogs.
+const HEARTHLIKE_MONTH_SHARED_CSS = `
+  .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; }
+  .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }
+  .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
+  .hd-row ha-icon { color:var(--primary-text-color); flex:none; width:20px; height:22px; }
+  .hd-info { font-size:14px; }
+  .hd-info a { color:var(--primary-text-color); text-decoration:none; }
+  .hd-desc { font-size:14px; color:var(--primary-text-color); white-space:normal; border-top:1px solid var(--divider-color); padding-top:16px; margin-top:16px; }
+  .hd-actions { display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--divider-color); }
+  .hd-btn { display:flex; align-items:center; gap:6px; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
+  .hd-btn ha-icon { width:18px; height:18px; }
+  .hd-btn-danger { color:#e24b4a; border-color:#e24b4a; }
+  .hd-error { color:#e24b4a; font-size:13px; min-height:16px; margin-top:8px; }
+  .hd-confirm-label { font-size:15px; color:var(--primary-text-color); margin-bottom:4px; }
+  .af-content { display:flex; flex-direction:column; gap:14px; padding:20px 24px 4px; min-width:280px; color:var(--primary-text-color); }
+  .af-row { display:flex; gap:12px; }
+  .af-row .af-field { flex:1; }
+  .af-field { display:flex; flex-direction:column; gap:4px; font-size:13px; }
+  .af-label { color:var(--secondary-text-color); }
+  .af-input { font:inherit; font-size:15px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color, #1c1c1c); color:var(--primary-text-color); }
+  .af-checkrow { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .af-error { color:#e24b4a; font-size:13px; min-height:16px; }
+  .af-actions { display:flex; justify-content:flex-end; gap:8px; padding:8px 0 4px; flex-wrap:wrap; }
+  .af-btn { font:inherit; font-size:14px; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }
+  .af-btn-text { background:none; color:var(--primary-color, #378ADD); }
+  .af-btn-filled { background:var(--primary-color, #378ADD); color:#fff; }
+  .af-btn-danger { background:#e24b4a; color:#fff; }
+`;
+
 class HearthlikeMonthCard extends HTMLElement {
   // Used when auto-discovering calendars (no "calendars" configured at all)
   // so every calendar gets a distinct, stable color without the user having
@@ -2421,6 +2450,9 @@ class HearthlikeMonthCard extends HTMLElement {
   setConfig(config) {
     config = config || {};
     this._config = {
+      // "dots" (default): a dot per calendar on each day and the selected day's events listed below.
+      // "events": event boxes inside each day.
+      layout: config.layout === 'events' ? 'events' : 'dots',
       // An empty/omitted "calendars" is the auto-discovery signal (see
       // _getCalendars) rather than an error - lets the card work with zero
       // configuration and still let power users lock in an explicit list.
@@ -2441,6 +2473,8 @@ class HearthlikeMonthCard extends HTMLElement {
     // grid themselves, rather than a one-shot "scroll once" that can lose a
     // timing race against layout.
     this._userScrolledMonth = false;
+    // dots layout: the tapped day (YYYY-MM-DD); null means today.
+    this._selectedDay = null;
     if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
     this._render();
   }
@@ -2602,6 +2636,8 @@ class HearthlikeMonthCard extends HTMLElement {
     const d = new Date(this._selectedMonthStart);
     d.setMonth(d.getMonth() + delta);
     this._selectedMonthStart = this._startOfMonth(d);
+    this._selectedDay = null;
+    this._userScrolledMonth = false;
     this._pinnedThisMonth =
       this._dateKey(this._selectedMonthStart) === this._dateKey(this._startOfMonth(new Date()));
     this._events = null;
@@ -2612,6 +2648,7 @@ class HearthlikeMonthCard extends HTMLElement {
     this._selectedMonthStart = this._startOfMonth(new Date());
     this._pinnedThisMonth = true;
     this._userScrolledMonth = false;
+    this._selectedDay = null;
     this._events = null;
     this._render();
     this._maybeFetch();
@@ -3022,12 +3059,198 @@ class HearthlikeMonthCard extends HTMLElement {
       errorEl.textContent = 'Failed to save: ' + (e && e.message ? e.message : 'unknown error');
     }
   }
+  // ---- dots layout: month grid with one dot per calendar, plus the selected day's events ----
+
+  _renderDots() {
+    const prev = this.shadowRoot.querySelector('.grid-scroll');
+    const prevTop = prev && prev.clientHeight > 0 ? prev.scrollTop : null;
+    if (prevTop != null) this._gridScroll = prevTop;
+    const monthStart = this._selectedMonthStart;
+    const days = this._buildMonthDays(monthStart);
+    const todayYMD = this._localYMD(new Date());
+    // Today unless a day was tapped; another month starts with nothing selected until one is.
+    const wanted = this._selectedDay || todayYMD;
+    const selected = days.some((d) => this._localYMD(d) === wanted) ? wanted : null;
+    this._dialogRecords = [];
+    let listHtml = '';
+    const cellsHtml = days
+      .map((d) => {
+        const ymd = this._localYMD(d);
+        const events = this._rawEventsForDay(d);
+        const colors = [...new Set(events.map((e) => e.color))];
+        if (ymd === selected) listHtml = this._dayListHtml(events);
+        const classes = ['day-cell'];
+        if (ymd === todayYMD) classes.push('today');
+        if (ymd === selected) classes.push('selected');
+        if (d.getMonth() !== monthStart.getMonth()) classes.push('other-month');
+        if (d.getDay() === 0) classes.push('sunday');
+        if (d.getDay() === 6) classes.push('saturday');
+        const dots = colors.map((c) => `<span class="dot" style="background:${this._esc(c)}"></span>`).join('');
+        return `<div class="${classes.join(' ')}" part="day" data-ymd="${ymd}"><div class="day-num"><span>${d.getDate()}</span></div><div class="dots">${dots}</div></div>`;
+      })
+      .join('');
+    const head = this._WEEKDAY_NAMES.map((n) => `<div class="dow">${n.slice(0, 2)}</div>`).join('');
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; height:100%; }
+        ha-card { height:100%; min-height:var(--hearthlike-view-min-height, 400px); box-sizing:border-box; padding:4px 16px 0; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; border:none; }
+        .topbar { flex:none; display:flex; align-items:stretch; justify-content:center; margin-bottom:4px; }
+        .nav { width:50px; flex:none; background:none; border:1px solid var(--divider-color, rgba(127,127,127,0.3)); border-radius:20px; color:var(--primary-text-color); font-size:clamp(20px, 3.2vmin, 28px); line-height:1; cursor:pointer; }
+        .date-block { flex:0 1 656px; min-width:0; display:flex; align-items:center; justify-content:center; gap:10px; }
+        .date-label { font-size:var(--hearthlike-month-title-size, clamp(22px, 4.8vmin, 42px)); font-weight:600; line-height:1.35; white-space:nowrap; }
+        .today-btn { font-size:13px; padding:2px 10px; border-radius:12px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
+        .dow-row, .grid { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); }
+        .dow-row { flex:none; overflow:hidden; scrollbar-gutter:stable; scrollbar-width:thin; }
+        .dow { text-align:center; font-size:var(--hearthlike-month-day-name-size, clamp(13px, 3.2vmin, 28px)); font-weight:600; line-height:1.6; padding:2px 0; border:1px solid var(--divider-color, rgba(127,127,127,0.3)); border-width:1px 1px 0 0; }
+        .dow:first-child { border-left-width:1px; }
+        .grid-scroll { flex:1 1 0; min-height:96px; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; }
+        .grid { grid-template-rows:repeat(${days.length / 7}, minmax(var(--hearthlike-month-row-height, clamp(64px, 11vmin, 197px)), 1fr)); min-height:100%; }
+        .day-cell { min-width:0; overflow:hidden; cursor:pointer; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); border-bottom:1px solid transparent; }
+        .day-cell.sunday { background:color-mix(in srgb, var(--primary-text-color) 13%, transparent); }
+        .day-cell.saturday { background:color-mix(in srgb, var(--primary-text-color) 6%, transparent); }
+        .day-cell.selected { box-shadow:inset 0 0 0 2px var(--primary-color, #378ADD); }
+        .day-num { display:flex; justify-content:flex-end; padding:2px 6px 0; font-size:var(--hearthlike-month-number-size, clamp(18px, 4.4vmin, 38px)); font-weight:600; line-height:1.35; }
+        .day-num span { display:inline-flex; align-items:center; justify-content:center; min-width:1.35em; height:1.35em; border-radius:50%; }
+        .today .day-num span { background:var(--primary-color, #378ADD); color:var(--text-primary-color, #fff); }
+        .dots { --dot:var(--hearthlike-month-dot-size, clamp(8px, 2.8vmin, 24px)); display:flex; justify-content:center; margin-top:-0.2em; padding:0 2px; }
+        .dot { flex:0 1 var(--dot); width:var(--dot); height:var(--dot); border-radius:50%; }
+        .dot + .dot { margin-left:calc(var(--dot) * -0.28); }
+        .other-month .day-num, .other-month .dots { opacity:0.35; }
+        .day-list { flex:0 1 auto; max-height:34%; overflow-y:auto; scrollbar-width:thin; padding:6px var(--hearthlike-month-list-inset, 24px) 6px 24px; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }
+        .item { display:flex; flex-wrap:wrap; align-items:center; column-gap:clamp(10px, 3vmin, 42px); min-height:clamp(40px, 7vmin, 62px); padding-left:clamp(16px, 5vmin, 56px); position:relative; cursor:pointer; font-size:var(--hearthlike-month-list-size, clamp(15px, 3.4vmin, 30px)); border-bottom:1px solid var(--divider-color, rgba(127,127,127,0.3)); }
+        .bar { position:absolute; left:0; top:5px; bottom:5px; width:clamp(6px, 1.5vmin, 14px); border-radius:7px; }
+        .item-title { flex:1 1 55%; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .item-title ha-icon.pin { color:var(--primary-color, #378ADD); --mdc-icon-size:1em; margin-left:0.3em; }
+        .item-time { flex:0 1 38%; white-space:nowrap; }
+        .empty { padding:10px 0; color:var(--secondary-text-color); font-size:var(--hearthlike-month-list-size, clamp(15px, 3.4vmin, 30px)); }
+        /* Measures the minimum row height, however it was set, for _fitMonthRows. */
+        .row-probe { position:absolute; visibility:hidden; pointer-events:none; width:0; height:var(--hearthlike-month-row-height, clamp(64px, 11vmin, 197px)); }
+        ${HEARTHLIKE_MONTH_SHARED_CSS}
+      </style>
+      <ha-card>
+        <div class="row-probe"></div>
+        <div class="topbar">
+          <button class="nav" id="prev">&#8249;</button>
+          <div class="date-block">
+            <div class="date-label">${this._MONTH_NAMES[monthStart.getMonth()]} ${monthStart.getFullYear()}</div>
+            ${this._pinnedThisMonth ? '' : '<button class="today-btn" id="thismonth">This Month</button>'}
+          </div>
+          <button class="nav" id="next">&#8250;</button>
+        </div>
+        <div class="dow-row">${head}</div>
+        <div class="grid-scroll"><div class="grid">${cellsHtml}</div></div>
+        ${selected ? `<div class="day-list" part="day-list">${listHtml}</div>` : ''}
+      </ha-card>
+    `;
+    this.shadowRoot.getElementById('prev').addEventListener('click', () => this._shiftMonth(-1));
+    this.shadowRoot.getElementById('next').addEventListener('click', () => this._shiftMonth(1));
+    const thisMonthBtn = this.shadowRoot.getElementById('thismonth');
+    if (thisMonthBtn) thisMonthBtn.addEventListener('click', () => this._goThisMonth());
+    this.shadowRoot.querySelectorAll('.day-cell[data-ymd]').forEach((el) => {
+      el.addEventListener('click', () => {
+        this._selectedDay = el.dataset.ymd;
+        this._render();
+      });
+    });
+    this.shadowRoot.querySelectorAll('.item[data-idx]').forEach((el) => {
+      el.addEventListener('click', () => this._openEventDialog(this._dialogRecords[Number(el.dataset.idx)]));
+    });
+    this._autoScrollMonth();
+  }
+
+  _dayListHtml(events) {
+    if (!events.length) return this._events ? '<div class="empty">No events</div>' : '';
+    // Times are minutes from the day's midnight; an event running past it is clipped to this day.
+    const clock = (min) => `${Math.floor(min / 60) % 12 || 12}:${String(min % 60).padStart(2, '0')} ${min % 1440 < 720 ? 'AM' : 'PM'}`;
+    const whole = (e) => e.isAllDay || (e.startMin <= 0 && e.endMin >= 1440);
+    return [...events]
+      .sort((a, b) => (whole(a) ? -1 : a.startMin) - (whole(b) ? -1 : b.startMin))
+      .map((e) => {
+        const ridx = this._dialogRecords.push(e) - 1;
+        const time = whole(e) ? 'all-day' : clock(Math.max(e.startMin, 0)) + '-' + clock(Math.min(e.endMin, 1440));
+        return `<div class="item" part="event" data-idx="${ridx}"><span class="bar" style="background:${this._esc(e.color)}"></span>
+          <span class="item-title">${this._iconHtml(this._iconFor(e.entityId))}${this._esc(e.title)}${e.location ? '<ha-icon class="pin" icon="mdi:map-marker"></ha-icon>' : ''}</span>
+          <span class="item-time">${time}</span></div>`;
+      })
+      .join('');
+  }
+
+  // dots layout: size the rows so a whole number of weeks fills the grid, never showing a sliver of a row.
+  _fitMonthRows(scrollEl) {
+    const grid = scrollEl.querySelector('.grid');
+    const probe = this.shadowRoot.querySelector('.row-probe');
+    if (!grid || !probe || !probe.offsetHeight || scrollEl.clientHeight <= 0) return;
+    const weeks = grid.children.length / 7;
+    const visible = Math.min(weeks, Math.max(1, Math.floor(scrollEl.clientHeight / probe.offsetHeight)));
+    grid.style.gridTemplateRows = `repeat(${weeks}, ${scrollEl.clientHeight / visible}px)`;
+  }
+
+  _autoScrollMonth() {
+    // Scroll the grid so the row containing today sits at the top, instead
+    // of opening on whatever week happens to start the month. Only applies
+    // while viewing the actual current month (_pinnedThisMonth) - flipping
+    // to a past/future month via the nav arrows leaves scroll position
+    // alone. A plain requestAnimationFrame isn't reliable here: like the
+    // day/week cards, this card's height is driven by CSS flex/grid from a
+    // container that may still report 0 height on the very first frame (or
+    // during a tab switch), which would silently scroll to 0 and never
+    // retry. A ResizeObserver on .grid-scroll is the backup that fires once
+    // the real size is available, and applyScroll re-runs on every render
+    // (initial load, periodic tick, reconnect) until the viewer scrolls the
+    // grid themselves - a single missed/premature attempt just gets
+    // corrected on the next pass instead of getting stuck.
+    const scrollEl = this.shadowRoot.querySelector('.grid-scroll');
+    if (scrollEl) {
+      // Once the viewer has scrolled, a re-render (tick, new data, tapped day) keeps their position.
+      if (this._userScrolledMonth) scrollEl.scrollTop = this._gridScroll || 0;
+      scrollEl.addEventListener('scroll', () => {
+        if (scrollEl.clientHeight > 0) this._gridScroll = scrollEl.scrollTop;
+      }, { passive: true });
+      const applyMonthScroll = () => {
+        this._fitMonthRows(scrollEl);
+        if (!this._pinnedThisMonth || this._userScrolledMonth) return;
+        if (scrollEl.clientHeight <= 0) return;
+        const todayEl = this.shadowRoot.querySelector('.day-cell.today');
+        if (!todayEl) return;
+        // offsetTop is measured against offsetTop's nearest *positioned*
+        // ancestor, not necessarily .grid-scroll - none of .grid,
+        // .grid-scroll, or ha-card set "position", so .day-cell's offsetTop
+        // was actually landing relative to some ancestor way outside this
+        // card (off by roughly a row's worth of pixels, which is why the
+        // previous version scrolled about one week short). Measuring both
+        // rects and diffing is independent of the positioned-ancestor chain
+        // entirely, so it lands exactly on the row regardless of what (if
+        // anything) up the tree happens to be positioned.
+        const todayRect = todayEl.getBoundingClientRect();
+        const scrollRect = scrollEl.getBoundingClientRect();
+        scrollEl.scrollTop = scrollEl.scrollTop + (todayRect.top - scrollRect.top);
+      };
+      requestAnimationFrame(applyMonthScroll);
+      if (this._monthResizeObserver) this._monthResizeObserver.disconnect();
+      this._monthResizeObserver = new ResizeObserver(() => applyMonthScroll());
+      this._monthResizeObserver.observe(scrollEl);
+      // shadowRoot.innerHTML is rebuilt fresh on every render, so scrollEl is
+      // a brand-new element each time - attach directly rather than
+      // guarding with a "did I already attach" flag (that flag would never
+      // let a listener reach the new element after the first render).
+      ['wheel', 'touchstart', 'pointerdown'].forEach((evt) =>
+        scrollEl.addEventListener(evt, () => { this._userScrolledMonth = true; }, { passive: true })
+      );
+    }
+  }
+
   _render() {
     if (!this._config || !this.shadowRoot) return;
     // While an event-detail dialog is open, skip the periodic/data-driven
     // re-render entirely rather than let a background tick or fetch nuke the
     // dialog out from under the viewer mid-read.
     if (this._dialogOpen) return;
+    if (this._config.layout === 'dots') {
+      this._renderDots();
+      return;
+    }
+    const prevScroll = this.shadowRoot.querySelector('.grid-scroll');
+    if (prevScroll && prevScroll.clientHeight > 0) this._gridScroll = prevScroll.scrollTop;
     const monthStart = this._selectedMonthStart;
     const monthLabel = this._MONTH_NAMES[monthStart.getMonth()] + ' ' + monthStart.getFullYear();
     const days = this._buildMonthDays(monthStart);
@@ -3077,7 +3300,7 @@ class HearthlikeMonthCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         :host { display:block; height:100%; }
-        ha-card { height:100%; min-height:200px; box-sizing:border-box; padding:12px 16px 12px; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; }
+        ha-card { height:100%; min-height:var(--hearthlike-view-min-height, 400px); box-sizing:border-box; padding:12px 16px 12px; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; }
         .topbar { flex:none; display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px; }
         .nav { background:none; border:none; color:var(--secondary-text-color); font-size:clamp(16px, 1.8vmin, 26px); line-height:1; cursor:pointer; padding:4px 8px; }
         .nav:hover { color:var(--primary-text-color); }
@@ -3086,7 +3309,7 @@ class HearthlikeMonthCard extends HTMLElement {
         .today-btn { font-size:clamp(9px, 1vmin, 13px); padding:2px 10px; border-radius:12px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
         .dow-row { flex:none; display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; margin-bottom:4px; }
         .dow { text-align:center; font-size:clamp(11px, 1.4vmin, 16px); font-weight:600; letter-spacing:0.03em; text-transform:uppercase; color:var(--secondary-text-color); padding:2px 0; }
-        .grid-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; scrollbar-width:thin; }
+        .grid-scroll { flex:1 1 0; min-height:0; overflow-y:auto; scrollbar-width:thin; }
         .grid { display:grid; grid-template-columns:repeat(7, 1fr); grid-template-rows:repeat(${numWeeks}, minmax(52px, 1fr)); gap:4px; min-height:100%; }
         .day-cell { position:relative; min-width:0; min-height:0; border-radius:6px; padding:3px 4px; display:flex; flex-direction:column; gap:clamp(4px, 0.55vmin, 7px); overflow:hidden; }
         .day-cell.today { background:color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
@@ -3095,39 +3318,14 @@ class HearthlikeMonthCard extends HTMLElement {
         .day-num { flex:none; font-size:clamp(11px, 1.3vmin, 16px); font-weight:400; color:var(--primary-text-color); }
         .day-num.today-num { color:var(--primary-color, #378ADD); }
         .day-events { flex:1 1 auto; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:clamp(4px, 0.42vmin, 6px); scrollbar-width:thin; }
-        .mevent { flex:none; border-radius:3px; padding:clamp(4px, 0.5vmin, 6px); box-sizing:border-box; cursor:pointer; overflow:hidden; }
-        .mevent-meta { font-size:clamp(11.9px, 1.3vmin, 17px); font-weight:500; color:rgba(255,255,255,0.85); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
-        .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; }
-        .mevent-title { font-size:clamp(14px, 1.5vmin, 20px); font-weight:800; color:#fff; line-height:1.2; white-space:normal; overflow-wrap:break-word; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; }
+        .mevent { flex:none; border-radius:3px; padding:5px 8px 5px 10px; box-sizing:border-box; cursor:pointer; overflow:hidden; }
+        .mevent-meta { font-size:var(--hearthlike-event-time-size, 11.9px); font-weight:500; color:rgba(255,255,255,0.85); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+        .mevent-title { font-size:var(--hearthlike-event-title-size, 14px); font-weight:800; color:#fff; line-height:1.2; white-space:normal; overflow-wrap:break-word; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; }
         .mevent.past { filter:brightness(0.55); }
         :host([light]) .mevent.past { filter:saturate(0.45); opacity:0.7; }
         :host([light]) .day-cell.past-day:not(.other-month) { filter:saturate(0.45); opacity:0.7; }
         :host([light]) .day-cell.other-month { opacity:0.55; }
-        .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }
-        .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
-        .hd-row ha-icon { color:var(--primary-text-color); flex:none; width:20px; height:22px; }
-        .hd-info { font-size:14px; }
-        .hd-info a { color:var(--primary-text-color); text-decoration:none; }
-        .hd-desc { font-size:14px; color:var(--primary-text-color); white-space:normal; border-top:1px solid var(--divider-color); padding-top:16px; margin-top:16px; }
-        .hd-actions { display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--divider-color); }
-        .hd-btn { display:flex; align-items:center; gap:6px; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
-        .hd-btn ha-icon { width:18px; height:18px; }
-        .hd-btn-danger { color:#e24b4a; border-color:#e24b4a; }
-        .hd-error { color:#e24b4a; font-size:13px; min-height:16px; margin-top:8px; }
-        .hd-confirm-label { font-size:15px; color:var(--primary-text-color); margin-bottom:4px; }
-        .af-content { display:flex; flex-direction:column; gap:14px; padding:20px 24px 4px; min-width:280px; color:var(--primary-text-color); }
-        .af-row { display:flex; gap:12px; }
-        .af-row .af-field { flex:1; }
-        .af-field { display:flex; flex-direction:column; gap:4px; font-size:13px; }
-        .af-label { color:var(--secondary-text-color); }
-        .af-input { font:inherit; font-size:15px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color, #1c1c1c); color:var(--primary-text-color); }
-        .af-checkrow { display:flex; align-items:center; gap:8px; font-size:14px; }
-        .af-error { color:#e24b4a; font-size:13px; min-height:16px; }
-        .af-actions { display:flex; justify-content:flex-end; gap:8px; padding:8px 0 4px; flex-wrap:wrap; }
-        .af-btn { font:inherit; font-size:14px; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }
-        .af-btn-text { background:none; color:var(--primary-color, #378ADD); }
-        .af-btn-filled { background:var(--primary-color, #378ADD); color:#fff; }
-        .af-btn-danger { background:#e24b4a; color:#fff; }
+        ${HEARTHLIKE_MONTH_SHARED_CSS}
       </style>
       <ha-card>
         <div class="topbar">
@@ -3152,51 +3350,7 @@ class HearthlikeMonthCard extends HTMLElement {
         this._openEventDialog(this._dialogRecords[idx]);
       });
     });
-    // Scroll the grid so the row containing today sits at the top, instead
-    // of opening on whatever week happens to start the month. Only applies
-    // while viewing the actual current month (_pinnedThisMonth) - flipping
-    // to a past/future month via the nav arrows leaves scroll position
-    // alone. A plain requestAnimationFrame isn't reliable here: like the
-    // day/week cards, this card's height is driven by CSS flex/grid from a
-    // container that may still report 0 height on the very first frame (or
-    // during a tab switch), which would silently scroll to 0 and never
-    // retry. A ResizeObserver on .grid-scroll is the backup that fires once
-    // the real size is available, and applyScroll re-runs on every render
-    // (initial load, periodic tick, reconnect) until the viewer scrolls the
-    // grid themselves - a single missed/premature attempt just gets
-    // corrected on the next pass instead of getting stuck.
-    const scrollEl = this.shadowRoot.querySelector('.grid-scroll');
-    if (scrollEl) {
-      const applyMonthScroll = () => {
-        if (!this._pinnedThisMonth || this._userScrolledMonth) return;
-        if (scrollEl.clientHeight <= 0) return;
-        const todayEl = this.shadowRoot.querySelector('.day-cell.today');
-        if (!todayEl) return;
-        // offsetTop is measured against offsetTop's nearest *positioned*
-        // ancestor, not necessarily .grid-scroll - none of .grid,
-        // .grid-scroll, or ha-card set "position", so .day-cell's offsetTop
-        // was actually landing relative to some ancestor way outside this
-        // card (off by roughly a row's worth of pixels, which is why the
-        // previous version scrolled about one week short). Measuring both
-        // rects and diffing is independent of the positioned-ancestor chain
-        // entirely, so it lands exactly on the row regardless of what (if
-        // anything) up the tree happens to be positioned.
-        const todayRect = todayEl.getBoundingClientRect();
-        const scrollRect = scrollEl.getBoundingClientRect();
-        scrollEl.scrollTop = scrollEl.scrollTop + (todayRect.top - scrollRect.top);
-      };
-      requestAnimationFrame(applyMonthScroll);
-      if (this._monthResizeObserver) this._monthResizeObserver.disconnect();
-      this._monthResizeObserver = new ResizeObserver(() => applyMonthScroll());
-      this._monthResizeObserver.observe(scrollEl);
-      // shadowRoot.innerHTML is rebuilt fresh on every render, so scrollEl is
-      // a brand-new element each time - attach directly rather than
-      // guarding with a "did I already attach" flag (that flag would never
-      // let a listener reach the new element after the first render).
-      ['wheel', 'touchstart', 'pointerdown'].forEach((evt) =>
-        scrollEl.addEventListener(evt, () => { this._userScrolledMonth = true; }, { passive: true })
-      );
-    }
+    this._autoScrollMonth();
   }
 }
 if (!customElements.get('hearthlike-month-card')) customElements.define('hearthlike-month-card', HearthlikeMonthCard);
@@ -3275,8 +3429,16 @@ class HearthlikeMonthCardEditor extends HTMLElement {
         .hde-remove:hover { color:#e24b4a; }
         .hde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
         .hde-hint { font-size:12px; color:var(--secondary-text-color); }
+        .hde-field { display:flex; flex-direction:column; gap:4px; font-size:14px; color:var(--primary-text-color); }
+        .hde-field select { font:inherit; padding:8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
       </style>
       <div class="hde-wrap">
+        <label class="hde-field">Layout
+          <select id="hde-layout">
+            <option value="dots" ${this._config.layout === 'events' ? '' : 'selected'}>Dots, with the selected day's events below (default)</option>
+            <option value="events" ${this._config.layout === 'events' ? 'selected' : ''}>Event boxes in each day</option>
+          </select>
+        </label>
         <div class="hde-hint">Leave "calendars" empty (remove all rows) to auto-show every calendar on the system. Add rows to pick specific calendars and colors.</div>
         ${calendars.length ? rowsHtml : '<div class="hde-empty">No calendars configured — the card will auto-discover every calendar.</div>'}
         <button class="hde-add" id="hde-add">+ Add calendar</button>
@@ -3303,6 +3465,13 @@ class HearthlikeMonthCardEditor extends HTMLElement {
       btn.addEventListener('click', () => this._removeCalendar(parseInt(btn.getAttribute('data-idx'), 10)));
     });
     this.shadowRoot.getElementById('hde-add').addEventListener('click', () => this._addCalendar());
+    this.shadowRoot.getElementById('hde-layout').addEventListener('change', (ev) => {
+      const config = { ...this._config };
+      if (ev.target.value === 'events') config.layout = 'events';
+      else delete config.layout;
+      this._config = config;
+      this._emitChange();
+    });
   }
 }
 if (!customElements.get('hearthlike-month-card-editor')) customElements.define('hearthlike-month-card-editor', HearthlikeMonthCardEditor);
@@ -3318,6 +3487,36 @@ console.info(
 
 // ---- www/hearthlike-cards/hearthlike-week-card.js ----
 {
+// Styles both layouts share: event icons and the event dialogs.
+const HEARTHLIKE_WEEK_SHARED_CSS = `
+  .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; }
+  .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }
+  .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
+  .hd-row ha-icon { color:var(--primary-text-color); flex:none; width:20px; height:22px; }
+  .hd-info { font-size:14px; }
+  .hd-info a { color:var(--primary-text-color); text-decoration:none; }
+  .hd-desc { font-size:14px; color:var(--primary-text-color); white-space:normal; border-top:1px solid var(--divider-color); padding-top:16px; margin-top:16px; }
+  .hd-actions { display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--divider-color); }
+  .hd-btn { display:flex; align-items:center; gap:6px; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
+  .hd-btn ha-icon { width:18px; height:18px; }
+  .hd-btn-danger { color:#e24b4a; border-color:#e24b4a; }
+  .hd-error { color:#e24b4a; font-size:13px; min-height:16px; margin-top:8px; }
+  .hd-confirm-label { font-size:15px; color:var(--primary-text-color); margin-bottom:4px; }
+  .af-content { display:flex; flex-direction:column; gap:14px; padding:20px 24px 4px; min-width:280px; color:var(--primary-text-color); }
+  .af-row { display:flex; gap:12px; }
+  .af-row .af-field { flex:1; }
+  .af-field { display:flex; flex-direction:column; gap:4px; font-size:13px; }
+  .af-label { color:var(--secondary-text-color); }
+  .af-input { font:inherit; font-size:15px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color, #1c1c1c); color:var(--primary-text-color); }
+  .af-checkrow { display:flex; align-items:center; gap:8px; font-size:14px; }
+  .af-error { color:#e24b4a; font-size:13px; min-height:16px; }
+  .af-actions { display:flex; justify-content:flex-end; gap:8px; padding:8px 0 4px; flex-wrap:wrap; }
+  .af-btn { font:inherit; font-size:14px; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }
+  .af-btn-text { background:none; color:var(--primary-color, #378ADD); }
+  .af-btn-filled { background:var(--primary-color, #378ADD); color:#fff; }
+  .af-btn-danger { background:#e24b4a; color:#fff; }
+`;
+
 class HearthlikeWeekCard extends HTMLElement {
   // Used when auto-discovering calendars (no "calendars" configured at all)
   // so every calendar gets a distinct, stable color without the user having
@@ -3339,6 +3538,10 @@ class HearthlikeWeekCard extends HTMLElement {
   setConfig(config) {
     config = config || {};
     this._config = {
+      // "list" (default): scrolling day columns, one box per event. "grid": one week as an hourly grid.
+      layout: config.layout === 'grid' ? 'grid' : 'list',
+      // list layout: how many weeks, starting with the current one, can be scrolled through.
+      weeks: Math.min(26, Math.max(1, Math.round(Number(config.weeks)) || 13)),
       hour_start: config.hour_start ?? 0,
       hour_end: config.hour_end ?? 24,
       px_per_hour: config.px_per_hour ?? 80,
@@ -3385,6 +3588,7 @@ class HearthlikeWeekCard extends HTMLElement {
     // already been silently reset out from under us.
     this._userScrolled = false;
     this._lastScrollTop = null;
+    this._listScroll = 0;
     this._render();
     if (!this._onCalendarUpdated) {
       this._onCalendarUpdated = () => this._forceRefresh();
@@ -3484,7 +3688,7 @@ class HearthlikeWeekCard extends HTMLElement {
     this._fetchedKey = key;
     const start = new Date(this._selectedWeekStart);
     const end = new Date(this._selectedWeekStart);
-    end.setDate(end.getDate() + 7);
+    end.setDate(end.getDate() + 7 * (this._config.layout === 'list' ? this._config.weeks : 1));
     const results = {};
     let failed = false;
     await Promise.all(
@@ -3529,6 +3733,7 @@ class HearthlikeWeekCard extends HTMLElement {
     this._pinnedThisWeek = true;
     this._events = null;
     this._userScrolled = false;
+    this._listScroll = 0;
     this._render();
     this._maybeFetch();
   }
@@ -4155,12 +4360,119 @@ class HearthlikeWeekCard extends HTMLElement {
     };
   }
 
+  // ---- list layout: seven day columns per row, scrolling through the coming weeks ----
+
+  // Events touching one day, all-day first then by start time. Timed events that run past midnight are
+  // clipped to the day, and a day they cover completely shows as "Entire day".
+  _listEventsForDay(day) {
+    const start = this._startOfDay(day);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    const out = [];
+    for (const e of this._rawEventsForDay(day)) {
+      if (e.isAllDay) {
+        out.push({ ...e, label: 'Entire day', order: 0, ended: false });
+        continue;
+      }
+      const s = new Date(e.startRaw);
+      const en = new Date(e.endRaw);
+      if (!(s < end && (en > start || s >= start))) continue;
+      const whole = s <= start && en >= end;
+      const from = s > start ? s : start;
+      const to = en < end ? en : end;
+      out.push({
+        ...e,
+        label: whole ? 'Entire day' : this._formatClockTime(from) + ' - ' + this._formatClockTime(to),
+        order: whole ? 0 : from.getTime(),
+        ended: en <= new Date(),
+      });
+    }
+    return out.sort((a, b) => a.order - b.order);
+  }
+
+  _renderList() {
+    const today = this._startOfDay(new Date());
+    this._dialogRecords = [];
+    const daysHtml = [];
+    for (let i = 0; i < 7 * this._config.weeks; i++) {
+      const d = new Date(this._selectedWeekStart);
+      d.setDate(d.getDate() + i);
+      const isToday = d.getTime() === today.getTime();
+      const isPastDay = d < today;
+      const events = this._listEventsForDay(d);
+      const eventsHtml = events
+        .map((e) => {
+          const ridx = this._dialogRecords.push(e) - 1;
+          return `<div class="ev${isToday && e.ended ? ' past' : ''}" part="event" data-idx="${ridx}" style="background:${this._esc(e.color)};border-color:${this._esc(e.color)}">
+            <div class="ev-time">${e.label}</div>
+            <div class="ev-title">${this._iconHtml(this._iconFor(e.entityId))}${this._esc(e.title)}</div>
+          </div>`;
+        })
+        .join('');
+      daysHtml.push(`<div class="day${isToday ? ' today' : ''}${isPastDay ? ' past-day' : ''}" part="day">
+        <div class="date"><span class="number">${d.getDate()}</span><span class="month">${this._MONTH_NAMES[d.getMonth()]}</span><span class="month short">${this._MONTH_NAMES[d.getMonth()].slice(0, 3)}</span><span class="weekday">${this._WEEKDAY_NAMES[d.getDay()].slice(0, 3)}</span></div>
+        <div class="events">${eventsHtml || (this._events ? '<div class="none">No events</div>' : '')}</div>
+      </div>`);
+    }
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display:block; height:100%; }
+        ha-card { height:100%; min-height:var(--hearthlike-view-min-height, 400px); box-sizing:border-box; padding:0 16px; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; border:none; container-type:inline-size; }
+        .wk-head, .wk-grid { display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); column-gap:15px; }
+        .wk-head { flex:none; padding-top:10px; overflow:hidden; scrollbar-gutter:stable; scrollbar-width:thin; }
+        .wk-head div { text-align:center; font-size:var(--hearthlike-day-name-size, 20px); font-weight:600; line-height:32px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .list-scroll { flex:1 1 0; min-height:0; overflow-y:auto; scrollbar-gutter:stable; scrollbar-width:thin; padding:8px 0 var(--hearthlike-week-bottom-space, 16px); }
+        .wk-grid { row-gap:15px; }
+        .day { min-width:0; border-radius:4px; }
+        .day.today { background:color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
+        .day.past-day { opacity:0.3; }
+        :host([light]) .day.past-day { filter:saturate(0.45); opacity:0.65; }
+        .date { display:flex; align-items:baseline; gap:4px; line-height:35px; white-space:nowrap; overflow:hidden; }
+        .number { font-size:var(--hearthlike-day-number-size, 29px); font-weight:500; }
+        .month, .weekday { font-size:14px; }
+        .weekday, .month.short { display:none; }
+        .weekday { margin-left:auto; padding-right:4px; font-weight:600; }
+        .events { margin-top:10px; display:flex; flex-direction:column; gap:5px; }
+        .ev { box-sizing:border-box; border-radius:3px; border-left:5px solid; padding:10px 10px 10px 10px; color:#fff; cursor:pointer; overflow-wrap:anywhere; }
+        .ev.past { filter:brightness(0.5); }
+        :host([light]) .ev.past { filter:saturate(0.45); opacity:0.7; }
+        .ev-time { font-size:var(--hearthlike-event-time-size, 11.9px); font-weight:500; line-height:1.4; margin-bottom:3px; }
+        .ev-title { font-size:var(--hearthlike-event-title-size, 14px); font-weight:800; line-height:1.2; }
+        .none { border-radius:5px; padding:5px; font-size:14px; line-height:17px; background:color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
+        @container (max-width: 1099px) { .wk-head, .wk-grid { column-gap:8px; } .wk-grid { row-gap:12px; } }
+        /* Too narrow for seven columns: fewer columns, and each day carries its own weekday name. */
+        @container (max-width: 839px) { .wk-head { display:none; } .wk-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } .weekday, .month.short { display:inline; } .month:not(.short) { display:none; } }
+        @container (max-width: 559px) { .wk-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } .day.past-day { display:none; } }
+        @container (max-width: 339px) { .wk-grid { grid-template-columns:minmax(0, 1fr); } }
+        ${HEARTHLIKE_WEEK_SHARED_CSS}
+      </style>
+      <ha-card>
+        <div class="wk-head" part="header">${this._WEEKDAY_NAMES.map((n) => `<div>${n}</div>`).join('')}</div>
+        <div class="list-scroll"><div class="wk-grid">${daysHtml.join('')}</div></div>
+      </ha-card>
+    `;
+    this.shadowRoot.querySelectorAll('.ev[data-idx]').forEach((el) => {
+      el.addEventListener('click', () => this._openEventDialog(this._dialogRecords[Number(el.dataset.idx)]));
+    });
+    const scroller = this.shadowRoot.querySelector('.list-scroll');
+    const restore = () => { if (scroller.clientHeight > 0) scroller.scrollTop = this._listScroll || 0; };
+    restore();
+    scroller.addEventListener('scroll', () => { if (scroller.clientHeight > 0) this._listScroll = scroller.scrollTop; }, { passive: true });
+    if (this._resizeObserver) this._resizeObserver.disconnect();
+    this._resizeObserver = new ResizeObserver(restore);
+    this._resizeObserver.observe(scroller);
+  }
+
   _render() {
     if (!this._config || !this.shadowRoot) return;
     // While an event-detail dialog is open, skip the periodic/data-driven
     // re-render entirely rather than let a background tick or fetch nuke the
     // dialog out from under the viewer mid-read.
     if (this._dialogOpen) return;
+    if (this._config.layout === 'list') {
+      this._renderList();
+      return;
+    }
     const prevGridScroll = this.shadowRoot.querySelector('.grid-scroll');
     if (prevGridScroll) {
       this._lastScrollTop = prevGridScroll.scrollTop;
@@ -4217,13 +4529,9 @@ class HearthlikeWeekCard extends HTMLElement {
     // instead of a separate badge repeated on each day.
     const colGap = 15;
     const merged = this._mergedWeekAllDayEvents(days);
-    // All-day lane height/gap scale gently with viewport size (like the
-    // font-size clamps below) so a 2-line all-day title still has room to
-    // breathe on a small tablet or a big wall display, instead of being a
-    // fixed pixel size that only looks right at one screen size.
-    const vmin = Math.min(window.innerWidth, window.innerHeight) / 100;
-    const laneHeight = Math.max(64, Math.min(92, Math.round(vmin * 6.9)));
-    const laneGap = Math.max(4, Math.min(7, Math.round(vmin * 0.42)));
+    // Lane height fits the "Entire day" box of the wall display: two lines of title plus padding.
+    const laneHeight = 57;
+    const laneGap = 5;
     const alldayHeight = merged.laneCount ? merged.laneCount * laneHeight + (merged.laneCount - 1) * laneGap : 0;
     this._dialogRecords = [];
     const alldayItemsHtml = merged.items
@@ -4321,7 +4629,7 @@ class HearthlikeWeekCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         :host { display:block; height:100%; }
-        ha-card { height:100%; min-height:200px; box-sizing:border-box; padding:12px 16px 12px; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; }
+        ha-card { height:100%; min-height:var(--hearthlike-view-min-height, 400px); box-sizing:border-box; padding:12px 16px 12px; overflow:hidden; display:flex; flex-direction:column; background:transparent; box-shadow:none; }
         .topbar { flex:none; display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px; }
         .nav { background:none; border:none; color:var(--secondary-text-color); font-size:clamp(16px, 1.8vmin, 26px); line-height:1; cursor:pointer; padding:4px 8px; }
         .nav:hover { color:var(--primary-text-color); }
@@ -4333,26 +4641,26 @@ class HearthlikeWeekCard extends HTMLElement {
         .headers-flex { flex:1; display:flex; gap:15px; }
         .col-header { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:2px; padding:2px 4px; border-radius:8px; }
         .col-header.today { background:color-mix(in srgb, var(--primary-text-color) 5%, transparent); }
-        .day-name { font-size:clamp(19px, 2.4vmin, 29px); font-weight:600; letter-spacing:0.03em; text-transform:uppercase; color:var(--secondary-text-color); }
-        .day-num { font-size:clamp(27px, 3.5vmin, 43px); font-weight:500; color:var(--primary-text-color); }
+        .day-name { font-size:var(--hearthlike-day-name-size, 20px); font-weight:600; letter-spacing:0.03em; text-transform:uppercase; color:var(--secondary-text-color); }
+        .day-num { font-size:var(--hearthlike-day-number-size, 29px); font-weight:500; color:var(--primary-text-color); }
         .allday-row { flex:none; display:flex; margin-bottom:6px; }
         .allday-row .spacer { width:52px; flex:none; }
         .allday-label { display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.1; font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }
         .allday-flex { flex:1; position:relative; }
-        .allday-box { position:absolute; border-radius:3px; box-sizing:border-box; font-size:clamp(14px, 1.5vmin, 20px); font-weight:800; line-height:1.25; padding:clamp(4px, 0.5vmin, 6px); white-space:normal; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; text-overflow:ellipsis; color:#fff; }
+        .allday-box { position:absolute; border-radius:3px; box-sizing:border-box; font-size:var(--hearthlike-event-title-size, 14px); font-weight:800; line-height:1.25; padding:10px 10px 10px 15px; white-space:normal; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; text-overflow:ellipsis; color:#fff; }
         .allday-box.past-day { opacity:0.3; }
-        .grid-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
+        .grid-scroll { flex:1 1 0; min-height:0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
         .grid-wrap { display:flex; position:relative; }
         .hour-col { position:relative; width:52px; flex:none; }
-        .hour-label { position:absolute; right:8px; transform:translateY(4px); font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }
+        .hour-label { position:absolute; right:8px; white-space:nowrap; transform:translateY(4px); font-size:clamp(11px, 1.3vmin, 16px); font-weight:800; color:var(--secondary-text-color); }
         .cols-wrap { position:relative; flex:1; display:flex; gap:15px; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }
         .hour-lines { position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; z-index:0; }
         .hline { position:absolute; left:0; right:0; border-top:1px solid var(--divider-color, rgba(127,127,127,0.3)); }
         .col-body { position:relative; flex:1; min-width:0; z-index:1; }
         .col-body.today { background:color-mix(in srgb, var(--primary-text-color) 3%, transparent); border-radius:6px; }
-        .event { position:absolute; border-radius:3px; padding:clamp(4px, 0.5vmin, 6px); box-sizing:border-box; overflow:hidden; }
-        .event-title { font-size:clamp(14px, 1.5vmin, 20px); font-weight:800; line-height:1.2; color:#fff; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; white-space:normal; overflow:hidden; text-overflow:ellipsis; }
-        .event-time { font-size:clamp(11.9px, 1.3vmin, 17px); font-weight:500; color:rgba(255,255,255,0.85); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+        .event { position:absolute; border-radius:3px; padding:5px 8px 5px 10px; box-sizing:border-box; overflow:hidden; }
+        .event-title { font-size:var(--hearthlike-event-title-size, 14px); font-weight:800; line-height:1.2; color:#fff; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; white-space:normal; overflow:hidden; text-overflow:ellipsis; }
+        .event-time { font-size:var(--hearthlike-event-time-size, 11.9px); font-weight:500; color:rgba(255,255,255,0.85); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
         .now-line { position:absolute; left:0; right:0; height:0; border-top:2px solid #e24b4a; z-index:5; }
         .now-dot { position:absolute; left:-4px; top:-4px; width:8px; height:8px; border-radius:50%; background:#e24b4a; }
         .col-header.past-day { opacity:0.3; }
@@ -4361,32 +4669,7 @@ class HearthlikeWeekCard extends HTMLElement {
         :host([light]) .event.past { filter:saturate(0.45); opacity:0.7; }
         :host([light]) .col-body.past-day { filter:saturate(0.45); opacity:0.65; }
         :host([light]) .allday-box.past-day { filter:saturate(0.45); opacity:0.65; }
-        .event, .allday-box { cursor:pointer; } .evicon { display:inline-block; width:1.15em; height:1.15em; margin-right:0.35em; vertical-align:-0.2em; --mdc-icon-size:1.15em; object-fit:contain; } span.evicon { width:auto; height:auto; line-height:1; vertical-align:baseline; } .evpic { border-radius:50%; object-fit:cover; }
-        .hd-content { padding:20px 24px 24px; color:var(--primary-text-color); font-size:14px; }
-        .hd-row { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
-        .hd-row ha-icon { color:var(--primary-text-color); flex:none; width:20px; height:22px; }
-        .hd-info { font-size:14px; }
-        .hd-info a { color:var(--primary-text-color); text-decoration:none; }
-        .hd-desc { font-size:14px; color:var(--primary-text-color); white-space:normal; border-top:1px solid var(--divider-color); padding-top:16px; margin-top:16px; }
-        .hd-actions { display:flex; gap:8px; margin-top:16px; padding-top:16px; border-top:1px solid var(--divider-color); }
-        .hd-btn { display:flex; align-items:center; gap:6px; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
-        .hd-btn ha-icon { width:18px; height:18px; }
-        .hd-btn-danger { color:#e24b4a; border-color:#e24b4a; }
-        .hd-error { color:#e24b4a; font-size:13px; min-height:16px; margin-top:8px; }
-        .hd-confirm-label { font-size:15px; color:var(--primary-text-color); margin-bottom:4px; }
-        .af-content { display:flex; flex-direction:column; gap:14px; padding:20px 24px 4px; min-width:280px; color:var(--primary-text-color); }
-        .af-row { display:flex; gap:12px; }
-        .af-row .af-field { flex:1; }
-        .af-field { display:flex; flex-direction:column; gap:4px; font-size:13px; }
-        .af-label { color:var(--secondary-text-color); }
-        .af-input { font:inherit; font-size:15px; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color, #1c1c1c); color:var(--primary-text-color); }
-        .af-checkrow { display:flex; align-items:center; gap:8px; font-size:14px; }
-        .af-error { color:#e24b4a; font-size:13px; min-height:16px; }
-        .af-actions { display:flex; justify-content:flex-end; gap:8px; padding:8px 0 4px; flex-wrap:wrap; }
-        .af-btn { font:inherit; font-size:14px; font-weight:600; padding:8px 16px; border-radius:6px; border:none; cursor:pointer; }
-        .af-btn-text { background:none; color:var(--primary-color, #378ADD); }
-        .af-btn-filled { background:var(--primary-color, #378ADD); color:#fff; }
-        .af-btn-danger { background:#e24b4a; color:#fff; }
+        .event, .allday-box { cursor:pointer; } ${HEARTHLIKE_WEEK_SHARED_CSS}
       </style>
       <ha-card>
         <div class="topbar">
@@ -4468,7 +4751,7 @@ if (!window.customCards.some((c) => c.type === 'hearthlike-week-card'))
   window.customCards.push({
   type: 'hearthlike-week-card',
   name: 'HearthLike Week Card',
-  description: 'Sunday-start weekly hourly grid view, inspired by Hearth Display',
+  description: 'Sunday-start week view: day columns over several weeks, or an hourly grid',
 });
 
 // Visual GUI editor for hearthlike-week-card's "calendars" list - same pattern as
@@ -4502,6 +4785,16 @@ class HearthlikeWeekCardEditor extends HTMLElement {
     calendars[idx] = { ...calendars[idx], ...patch };
     this._config = { ...this._config, calendars };
     this._emitChange();
+  }
+
+  // Set a top-level option, or drop it when empty so the default applies.
+  _setOption(key, value) {
+    const config = { ...this._config };
+    if (value === '') delete config[key];
+    else config[key] = value;
+    this._config = config;
+    this._emitChange();
+    this._render();
   }
 
   _addCalendar() {
@@ -4548,8 +4841,19 @@ class HearthlikeWeekCardEditor extends HTMLElement {
         .hde-remove:hover { color:#e24b4a; }
         .hde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
         .hde-hint { font-size:12px; color:var(--secondary-text-color); }
+        .hde-field { display:flex; flex-direction:column; gap:4px; font-size:14px; color:var(--primary-text-color); }
+        .hde-field select, .hde-field input { font:inherit; padding:8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
       </style>
       <div class="hde-wrap">
+        <label class="hde-field">Layout
+          <select id="hde-layout">
+            <option value="list" ${this._config.layout === 'grid' ? '' : 'selected'}>Day list, several weeks (default)</option>
+            <option value="grid" ${this._config.layout === 'grid' ? 'selected' : ''}>Hourly grid, one week</option>
+          </select>
+        </label>
+        ${this._config.layout === 'grid' ? '' : `<label class="hde-field">Weeks to show (1-26)
+          <input id="hde-weeks" type="number" min="1" max="26" placeholder="13" value="${Number(this._config.weeks) || ''}" />
+        </label>`}
         <div class="hde-hint">Leave "calendars" empty (remove all rows) to auto-show every calendar on the system. Add rows to pick specific calendars and colors.</div>
         ${calendars.length ? rowsHtml : '<div class="hde-empty">No calendars configured — the card will auto-discover every calendar.</div>'}
         <button class="hde-add" id="hde-add">+ Add calendar</button>
@@ -4580,6 +4884,9 @@ class HearthlikeWeekCardEditor extends HTMLElement {
     });
 
     this.shadowRoot.getElementById('hde-add').addEventListener('click', () => this._addCalendar());
+    this.shadowRoot.getElementById('hde-layout').addEventListener('change', (ev) => this._setOption('layout', ev.target.value === 'grid' ? 'grid' : ''));
+    const weeks = this.shadowRoot.getElementById('hde-weeks');
+    if (weeks) weeks.addEventListener('change', (ev) => this._setOption('weeks', Number(ev.target.value) || ''));
   }
 }
 

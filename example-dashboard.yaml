@@ -28,10 +28,13 @@ views:
                 color: "#378ADD"
                 entities: [calendar.family]
           week:
+            layout: list       # list (default) | grid (hourly)
+            weeks: 13          # list only: how many weeks can be scrolled through
             calendars:
               - entity: calendar.family
                 color: "#378ADD"
           month:
+            layout: dots       # dots (default) | events (event boxes in each day)
             calendars:
               - entity: calendar.family
                 color: "#378ADD"
@@ -93,6 +96,7 @@ views:
     panel: true
     cards:
       - type: custom:hearthlike-week-card
+        layout: grid           # hourly grid; omit for the day list
         hour_start: 0
         hour_end: 24
         px_per_hour: 64
