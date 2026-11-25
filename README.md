@@ -136,7 +136,7 @@ The CSS variables also work when set from card-mod or a theme, since they inheri
 
 ## Requirements
 
-- A recent **Home Assistant** release (the exact minimum version will be documented once tested)
+- **Home Assistant 2026.10.1** or newer (the oldest release the cards have been tested on)
 - **Calendar cards**: one or more `calendar.*` entities that support creating and editing events
   (for example [Local Calendar](https://www.home-assistant.io/integrations/local_calendar/))
 
