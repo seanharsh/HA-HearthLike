@@ -809,53 +809,105 @@ class HearthlikeDayCardEditor extends HTMLElement {
       this._emitChange(),
       this._render();
   }
+  // Rows are added, removed and updated in place. Home Assistant sends every change straight back through
+  // setConfig, and rebuilding the form then scrolls the edit dialog to the top, away from the picker in use.
   _render() {
-    const e = this._config.columns || [],
-      t = e
-        .map(
-          (e, t) =>
-            `\n      <div class="hde-row" data-idx="${t}">\n        <div class="hde-row-top">\n          <input class="hde-name" data-field="name" data-idx="${t}" type="text" value="${(e.name || "").replace(/"/g, "&quot;")}" placeholder="Column name" />\n          <input class="hde-color" data-field="color" data-idx="${t}" type="color" value="${e.color || "#378ADD"}" />\n          <button class="hde-remove" data-idx="${t}" title="Remove column">&#10005;</button>\n        </div>\n        ${this._hass ? '<ha-selector class="hde-picker" data-idx="' + t + '"></ha-selector>' : ""}\n        <hearthlike-icon-field class="hde-icon" data-idx="${t}"></hearthlike-icon-field>\n      </div>`,
-        )
-        .join("");
-    this.shadowRoot || this.attachShadow({ mode: "open" }),
-      (this.shadowRoot.innerHTML = `\n      <style>\n        .hde-wrap { display:flex; flex-direction:column; gap:16px; padding:8px 0; }\n        .hde-empty { font-size:13px; color:var(--secondary-text-color); }\n        .hde-row { display:flex; flex-direction:column; gap:6px; padding:10px; border:1px solid var(--divider-color); border-radius:8px; }\n        .hde-row-top { display:flex; align-items:center; gap:8px; }\n        .hde-name { flex:1; font:inherit; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }\n        .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }\n        .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }\n        .hde-remove:hover { color:#e24b4a; }\n        .hde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }\n        .hde-icon { flex:1 1 100%; min-width:0; }\n        .hde-hint { font-size:12px; color:var(--secondary-text-color); }\n      </style>\n      <div class="hde-wrap">\n        <div class="hde-hint">Leave "columns" empty (remove all rows) to auto-show every calendar on the system. Add rows to pick specific calendars, names, and colors.</div>\n        ${e.length ? t : '<div class="hde-empty">No columns configured — the card will auto-discover every calendar.</div>'}\n        <button class="hde-add" id="hde-add">+ Add column</button>\n      </div>\n    `),
-      this.shadowRoot.querySelectorAll(".hde-picker").forEach((t) => {
-        const n = parseInt(t.getAttribute("data-idx"), 10);
-        (t.hass = this._hass),
-          // ha-entity-picker has no multi-select; ha-selector renders HA's multi-entity picker.
-          (t.selector = { entity: { multiple: !0, domain: "calendar" } }),
-          (t.label = "Calendars for this column"),
-          (t.value = (e[n] && e[n].entities) || []),
-          t.addEventListener("value-changed", (e) => {
-            this._updateColumn(n, { entities: e.detail.value || [] });
-            const field = this.shadowRoot.querySelector(`hearthlike-icon-field[data-idx="${n}"]`);
-            if (field) field.entities = e.detail.value || [];
-          });
-      }),
-      this.shadowRoot.querySelectorAll("hearthlike-icon-field").forEach((t) => {
-        const n = parseInt(t.getAttribute("data-idx"), 10);
-        (t.label = "Event icon (search, emoji, image URL or entity)"),
-          (t.entities = (e[n] && e[n].entities) || []),
-          (t.hint = (e[n] && e[n].name) || ""),
-          (t.value = (e[n] && e[n].icon) || ""),
-          (t.hass = this._hass),
-          t.addEventListener("icon-changed", (e) => this._updateColumn(n, { icon: e.detail.value }));
-      }),
-      this.shadowRoot.querySelectorAll("input[data-field]").forEach((e) => {
-        e.addEventListener("change", (t) => {
-          const n = parseInt(e.getAttribute("data-idx"), 10),
-            a = e.getAttribute("data-field");
-          this._updateColumn(n, { [a]: t.target.value });
-          const field = this.shadowRoot.querySelector(`hearthlike-icon-field[data-idx="${n}"]`);
-          if (field && a === "name") field.hint = t.target.value;
-        });
-      }),
-      this.shadowRoot.querySelectorAll(".hde-remove").forEach((e) => {
-        e.addEventListener("click", () =>
-          this._removeColumn(parseInt(e.getAttribute("data-idx"), 10)),
-        );
-      }),
-      this.shadowRoot.getElementById("hde-add").addEventListener("click", () => this._addColumn());
+    if (!this.shadowRoot) this.attachShadow({ mode: "open" });
+    if (!this._rows) this._build();
+    const columns = this._config.columns || [];
+    while (this._rows.children.length > columns.length) this._rows.lastElementChild.remove();
+    while (this._rows.children.length < columns.length)
+      this._rows.appendChild(this._createRow(this._rows.children.length));
+    this.shadowRoot.querySelector(".hde-empty").hidden = columns.length > 0;
+    columns.forEach((column, i) => this._updateRow(this._rows.children[i], column || {}));
+  }
+  _build() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        .hde-wrap { display:flex; flex-direction:column; gap:16px; padding:8px 0; }
+        .hde-rows { display:flex; flex-direction:column; gap:16px; }
+        .hde-rows:empty { display:none; }
+        .hde-empty { font-size:13px; color:var(--secondary-text-color); }
+        .hde-row { display:flex; flex-direction:column; gap:6px; padding:10px; border:1px solid var(--divider-color); border-radius:8px; }
+        .hde-row-top { display:flex; align-items:center; gap:8px; }
+        .hde-name { flex:1; font:inherit; padding:6px 8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
+        .hde-color { width:36px; height:32px; border:none; background:none; padding:0; cursor:pointer; }
+        .hde-remove { background:none; border:none; color:var(--secondary-text-color); font-size:16px; cursor:pointer; padding:4px 8px; }
+        .hde-remove:hover { color:#e24b4a; }
+        .hde-add { align-self:flex-start; font:inherit; font-size:14px; font-weight:600; padding:8px 14px; border-radius:6px; border:1px solid var(--divider-color); background:none; color:var(--primary-color, #378ADD); cursor:pointer; }
+        .hde-icon { flex:1 1 100%; min-width:0; }
+        .hde-hint { font-size:12px; color:var(--secondary-text-color); }
+      </style>
+      <div class="hde-wrap">
+        <div class="hde-hint">Leave "columns" empty (remove all rows) to auto-show every calendar on the system. Add rows to pick specific calendars, names, and colors.</div>
+        <div class="hde-rows"></div>
+        <div class="hde-empty">No columns configured — the card will auto-discover every calendar.</div>
+        <button class="hde-add" id="hde-add">+ Add column</button>
+      </div>
+    `;
+    this._rows = this.shadowRoot.querySelector(".hde-rows");
+    this.shadowRoot.getElementById("hde-add").addEventListener("click", () => this._addColumn());
+  }
+  // A row keeps its position for as long as it exists, so its listeners can hold the column index.
+  _createRow(n) {
+    const row = document.createElement("div");
+    row.className = "hde-row";
+    row.innerHTML = `
+      <div class="hde-row-top">
+        <input class="hde-name" data-field="name" type="text" placeholder="Column name" />
+        <input class="hde-color" data-field="color" type="color" />
+        <button class="hde-remove" title="Remove column">&#10005;</button>
+      </div>
+      <hearthlike-icon-field class="hde-icon" data-idx="${n}"></hearthlike-icon-field>
+    `;
+    const field = row.querySelector("hearthlike-icon-field");
+    field.label = "Event icon (search, emoji, image URL or entity)";
+    field.addEventListener("icon-changed", (e) => this._updateColumn(n, { icon: e.detail.value }));
+    row.querySelectorAll("input[data-field]").forEach((input) => {
+      input.addEventListener("change", () => {
+        const key = input.getAttribute("data-field");
+        if (key === "name") field.hint = input.value;
+        this._updateColumn(n, { [key]: input.value });
+      });
+    });
+    row.querySelector(".hde-remove").addEventListener("click", () => this._removeColumn(n));
+    return row;
+  }
+  _createPicker(row) {
+    const picker = document.createElement("ha-selector"),
+      field = row.querySelector("hearthlike-icon-field"),
+      n = parseInt(field.getAttribute("data-idx"), 10);
+    picker.className = "hde-picker";
+    picker.setAttribute("data-idx", n);
+    picker.hass = this._hass;
+    // ha-entity-picker has no multi-select; ha-selector renders HA's multi-entity picker.
+    picker.selector = { entity: { multiple: !0, domain: "calendar" } };
+    picker.label = "Calendars for this column";
+    picker.addEventListener("value-changed", (e) => {
+      const entities = e.detail.value || [];
+      picker.value = field.entities = entities;
+      this._updateColumn(n, { entities });
+    });
+    row.insertBefore(picker, field);
+    return picker;
+  }
+  _updateRow(row, column) {
+    const name = row.querySelector(".hde-name"),
+      color = row.querySelector(".hde-color"),
+      field = row.querySelector("hearthlike-icon-field"),
+      entities = column.entities || [];
+    // Never overwrite a name that is being typed.
+    if (this.shadowRoot.activeElement !== name) name.value = column.name || "";
+    color.value = column.color || "#378ADD";
+    if (this._hass) {
+      // The calendar pickers need hass to render.
+      const picker = row.querySelector(".hde-picker") || this._createPicker(row);
+      if (JSON.stringify(picker.value) !== JSON.stringify(entities)) picker.value = entities;
+      field.hass = this._hass;
+    }
+    field.entities = entities;
+    field.hint = column.name || "";
+    field.value = column.icon || "";
   }
 }
 if (!customElements.get("hearthlike-day-card-editor"))
