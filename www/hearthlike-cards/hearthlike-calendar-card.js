@@ -512,7 +512,10 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
   }
 
   set hass(hass) {
+    const first = !this._hass;
     this._hass = hass;
+    // The Add Event pickers need hass to render, and it can arrive after setConfig.
+    if (first && hass && this._built) this._renderFabPane();
     if (this._dayEditor) this._dayEditor.hass = hass;
     if (this._weekEditor) this._weekEditor.hass = hass;
     if (this._monthEditor) this._monthEditor.hass = hass;
@@ -595,6 +598,8 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
         .pane { display: none; }
         .pane.active { display: block; }
         .fde-wrap { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
+        .fde-rows { display:flex; flex-direction:column; gap:10px; }
+        .fde-rows:empty { display:none; }
         .fde-empty { font-size:13px; color:var(--secondary-text-color); }
         .fde-row { display:flex; align-items:center; gap:8px; }
         .fde-row ha-entity-picker { flex:1; }
@@ -668,47 +673,67 @@ class HearthlikeCalendarCardEditor extends HTMLElement {
     });
   }
 
+  // Rows are added, removed and updated in place, so the edit dialog keeps its scroll position.
   _renderFabPane() {
     const pane = this.shadowRoot.querySelector('[data-pane="fab"]');
+    if (!this._fabRows) this._buildFabPane(pane);
     const calendars = (this._config.fab && this._config.fab.calendars) || [];
-    const rowsHtml = calendars
-      .map(
-        (entity, idx) => `
-      <div class="fde-row" data-idx="${idx}">
-        <ha-entity-picker class="fde-picker" data-idx="${idx}" allow-custom-entity></ha-entity-picker>
-        <button class="fde-move fde-up" data-idx="${idx}" title="Move up" ${idx === 0 ? 'disabled' : ''}>&#9650;</button>
-        <button class="fde-move fde-down" data-idx="${idx}" title="Move down" ${idx === calendars.length - 1 ? 'disabled' : ''}>&#9660;</button>
-        <button class="fde-remove" data-idx="${idx}" title="Remove calendar">&#10005;</button>
-      </div>`
-      )
-      .join('');
+    const rows = this._fabRows;
+    while (rows.children.length > calendars.length) rows.lastElementChild.remove();
+    while (rows.children.length < calendars.length) rows.appendChild(this._createFabRow(rows.children.length));
+    pane.querySelector('.fde-empty').hidden = calendars.length > 0;
+    calendars.forEach((entity, idx) => {
+      const row = rows.children[idx];
+      row.querySelector('.fde-up').disabled = idx === 0;
+      row.querySelector('.fde-down').disabled = idx === calendars.length - 1;
+      if (!this._hass) return;
+      const picker = row.querySelector('.fde-picker') || this._createFabPicker(row, idx);
+      if (picker.value !== (entity || '')) picker.value = entity || '';
+    });
+  }
+
+  _buildFabPane(pane) {
     pane.innerHTML = `
       <div class="fde-wrap">
         <div class="fde-hint">Leave this list empty to let the Add Event button offer every calendar known to Home Assistant. Add rows to restrict it to specific calendars; use the arrows to set the order they appear in.</div>
-        ${calendars.length ? rowsHtml : '<div class="fde-empty">No calendars configured — Add Event will auto-discover every calendar.</div>'}
+        <div class="fde-rows"></div>
+        <div class="fde-empty">No calendars configured — Add Event will auto-discover every calendar.</div>
         <button class="fde-add" id="fde-add">+ Add calendar</button>
       </div>
     `;
-    pane.querySelectorAll('.fde-picker').forEach((picker) => {
-      const idx = parseInt(picker.getAttribute('data-idx'), 10);
-      picker.hass = this._hass;
-      picker.includeDomains = ['calendar'];
-      picker.label = 'Calendar';
-      picker.value = calendars[idx] || '';
-      picker.addEventListener('value-changed', (ev) => {
-        this._updateFabCalendar(idx, ev.detail.value || '');
-      });
-    });
-    pane.querySelectorAll('.fde-up').forEach((btn) => {
-      btn.addEventListener('click', () => this._moveFabCalendar(parseInt(btn.getAttribute('data-idx'), 10), -1));
-    });
-    pane.querySelectorAll('.fde-down').forEach((btn) => {
-      btn.addEventListener('click', () => this._moveFabCalendar(parseInt(btn.getAttribute('data-idx'), 10), 1));
-    });
-    pane.querySelectorAll('.fde-remove').forEach((btn) => {
-      btn.addEventListener('click', () => this._removeFabCalendar(parseInt(btn.getAttribute('data-idx'), 10)));
-    });
+    this._fabRows = pane.querySelector('.fde-rows');
     pane.querySelector('#fde-add').addEventListener('click', () => this._addFabCalendar());
+  }
+
+  // A row keeps its position for as long as it exists, so its listeners can hold the calendar index.
+  _createFabRow(idx) {
+    const row = document.createElement('div');
+    row.className = 'fde-row';
+    row.setAttribute('data-idx', idx);
+    row.innerHTML = `
+      <button class="fde-move fde-up" data-idx="${idx}" title="Move up">&#9650;</button>
+      <button class="fde-move fde-down" data-idx="${idx}" title="Move down">&#9660;</button>
+      <button class="fde-remove" data-idx="${idx}" title="Remove calendar">&#10005;</button>`;
+    row.querySelector('.fde-up').addEventListener('click', () => this._moveFabCalendar(idx, -1));
+    row.querySelector('.fde-down').addEventListener('click', () => this._moveFabCalendar(idx, 1));
+    row.querySelector('.fde-remove').addEventListener('click', () => this._removeFabCalendar(idx));
+    return row;
+  }
+
+  _createFabPicker(row, idx) {
+    const picker = document.createElement('ha-entity-picker');
+    picker.className = 'fde-picker';
+    picker.setAttribute('data-idx', idx);
+    picker.hass = this._hass;
+    picker.includeDomains = ['calendar'];
+    picker.label = 'Calendar';
+    picker.allowCustomEntity = true;
+    picker.addEventListener('value-changed', (ev) => {
+      picker.value = ev.detail.value || '';
+      this._updateFabCalendar(idx, ev.detail.value || '');
+    });
+    row.prepend(picker);
+    return picker;
   }
 
   _updateSection(section, subConfig) {

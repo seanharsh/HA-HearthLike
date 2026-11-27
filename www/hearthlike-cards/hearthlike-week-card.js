@@ -1294,7 +1294,13 @@ class HearthlikeWeekCardEditor extends HTMLElement {
   }
 
   set hass(hass) {
+    const first = !this._hass;
     this._hass = hass;
+    // The calendar pickers need hass to render, and the calendar card editor sets it after setConfig.
+    if (first && hass && this._config && this.shadowRoot) {
+      this._render();
+      return;
+    }
     this.shadowRoot?.querySelectorAll('ha-entity-picker, hearthlike-icon-field').forEach((el) => {
       el.hass = hass;
     });
@@ -1342,24 +1348,30 @@ class HearthlikeWeekCardEditor extends HTMLElement {
     this._render();
   }
 
+  // Rows are added, removed and updated in place. Home Assistant sends changes straight back through setConfig,
+  // and rebuilding the form can scroll the edit dialog to the top.
   _render() {
-    const calendars = this._config.calendars || [];
-    const rowsHtml = calendars
-      .map(
-        (cal, idx) => `
-      <div class="hde-row" data-idx="${idx}">
-        <ha-entity-picker class="hde-picker" data-idx="${idx}" allow-custom-entity></ha-entity-picker>
-        <input class="hde-color" data-field="color" data-idx="${idx}" type="color" value="${cal.color || '#378ADD'}" />
-        <button class="hde-remove" data-idx="${idx}" title="Remove calendar">&#10005;</button>
-        <hearthlike-icon-field class="hde-icon" data-idx="${idx}"></hearthlike-icon-field>
-      </div>`
-      )
-      .join('');
-
     if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
+    if (!this._rows) this._build();
+    const grid = this._config.layout === 'grid';
+    this.shadowRoot.getElementById('hde-layout').value = grid ? 'grid' : 'list';
+    this.shadowRoot.getElementById('hde-weeks-field').hidden = grid;
+    // Never overwrite a number that is being typed.
+    const weeks = this.shadowRoot.getElementById('hde-weeks');
+    if (this.shadowRoot.activeElement !== weeks) weeks.value = Number(this._config.weeks) || '';
+    const calendars = this._config.calendars || [];
+    while (this._rows.children.length > calendars.length) this._rows.lastElementChild.remove();
+    while (this._rows.children.length < calendars.length) this._rows.appendChild(this._createRow(this._rows.children.length));
+    this.shadowRoot.querySelector('.hde-empty').hidden = calendars.length > 0;
+    calendars.forEach((cal, idx) => this._updateRow(this._rows.children[idx], cal || {}, idx));
+  }
+
+  _build() {
     this.shadowRoot.innerHTML = `
       <style>
         .hde-wrap { display:flex; flex-direction:column; gap:10px; padding:8px 0; }
+        .hde-rows { display:flex; flex-direction:column; gap:10px; }
+        .hde-rows:empty { display:none; }
         .hde-empty { font-size:13px; color:var(--secondary-text-color); }
         .hde-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
         .hde-icon { order:4; flex:1 1 100%; min-width:0; }
@@ -1371,60 +1383,75 @@ class HearthlikeWeekCardEditor extends HTMLElement {
         .hde-hint { font-size:12px; color:var(--secondary-text-color); }
         .hde-field { display:flex; flex-direction:column; gap:4px; font-size:14px; color:var(--primary-text-color); }
         .hde-field select, .hde-field input { font:inherit; padding:8px; border-radius:6px; border:1px solid var(--divider-color); background:var(--card-background-color); color:var(--primary-text-color); }
+        .hde-field[hidden] { display:none; }
       </style>
       <div class="hde-wrap">
         <label class="hde-field">Layout
           <select id="hde-layout">
-            <option value="list" ${this._config.layout === 'grid' ? '' : 'selected'}>Day list, several weeks (default)</option>
-            <option value="grid" ${this._config.layout === 'grid' ? 'selected' : ''}>Hourly grid, one week</option>
+            <option value="list">Day list, several weeks (default)</option>
+            <option value="grid">Hourly grid, one week</option>
           </select>
         </label>
-        ${this._config.layout === 'grid' ? '' : `<label class="hde-field">Weeks to show (1-26)
-          <input id="hde-weeks" type="number" min="1" max="26" placeholder="13" value="${Number(this._config.weeks) || ''}" />
-        </label>`}
+        <label class="hde-field" id="hde-weeks-field">Weeks to show (1-26)
+          <input id="hde-weeks" type="number" min="1" max="26" placeholder="13" />
+        </label>
         <div class="hde-hint">Leave "calendars" empty (remove all rows) to auto-show every calendar on the system. Add rows to pick specific calendars and colors.</div>
-        ${calendars.length ? rowsHtml : '<div class="hde-empty">No calendars configured — the card will auto-discover every calendar.</div>'}
+        <div class="hde-rows"></div>
+        <div class="hde-empty">No calendars configured — the card will auto-discover every calendar.</div>
         <button class="hde-add" id="hde-add">+ Add calendar</button>
       </div>
     `;
-
-    this.shadowRoot.querySelectorAll('.hde-picker').forEach((picker) => {
-      const idx = parseInt(picker.getAttribute('data-idx'), 10);
-      picker.hass = this._hass;
-      picker.includeDomains = ['calendar'];
-      picker.label = 'Calendar';
-      picker.value = (calendars[idx] && calendars[idx].entity) || '';
-      picker.addEventListener('value-changed', (ev) => {
-        this._updateCalendar(idx, { entity: ev.detail.value || '' });
-        const field = this.shadowRoot.querySelector(`hearthlike-icon-field[data-idx="${idx}"]`);
-        if (field) field.entities = [ev.detail.value || ''];
-      });
-    });
-
-    this.shadowRoot.querySelectorAll('hearthlike-icon-field').forEach((field) => {
-      const idx = parseInt(field.getAttribute('data-idx'), 10);
-      field.label = 'Event icon (search, emoji, image URL or entity)';
-      field.entities = [(calendars[idx] && calendars[idx].entity) || ''];
-      field.value = (calendars[idx] && calendars[idx].icon) || '';
-      field.hass = this._hass;
-      field.addEventListener('icon-changed', (ev) => this._updateCalendar(idx, { icon: ev.detail.value }));
-    });
-    this.shadowRoot.querySelectorAll('input[data-field]').forEach((input) => {
-      input.addEventListener('change', (ev) => {
-        const idx = parseInt(input.getAttribute('data-idx'), 10);
-        const field = input.getAttribute('data-field');
-        this._updateCalendar(idx, { [field]: ev.target.value });
-      });
-    });
-
-    this.shadowRoot.querySelectorAll('.hde-remove').forEach((btn) => {
-      btn.addEventListener('click', () => this._removeCalendar(parseInt(btn.getAttribute('data-idx'), 10)));
-    });
-
+    this._rows = this.shadowRoot.querySelector('.hde-rows');
     this.shadowRoot.getElementById('hde-add').addEventListener('click', () => this._addCalendar());
     this.shadowRoot.getElementById('hde-layout').addEventListener('change', (ev) => this._setOption('layout', ev.target.value === 'grid' ? 'grid' : ''));
-    const weeks = this.shadowRoot.getElementById('hde-weeks');
-    if (weeks) weeks.addEventListener('change', (ev) => this._setOption('weeks', Number(ev.target.value) || ''));
+    this.shadowRoot.getElementById('hde-weeks').addEventListener('change', (ev) => this._setOption('weeks', Number(ev.target.value) || ''));
+  }
+
+  // A row keeps its position for as long as it exists, so its listeners can hold the calendar index.
+  _createRow(idx) {
+    const row = document.createElement('div');
+    row.className = 'hde-row';
+    row.setAttribute('data-idx', idx);
+    row.innerHTML = `
+      <input class="hde-color" data-idx="${idx}" type="color" />
+      <button class="hde-remove" data-idx="${idx}" title="Remove calendar">&#10005;</button>
+      <hearthlike-icon-field class="hde-icon" data-idx="${idx}"></hearthlike-icon-field>`;
+    const field = row.querySelector('hearthlike-icon-field');
+    field.label = 'Event icon (search, emoji, image URL or entity)';
+    field.addEventListener('icon-changed', (ev) => this._updateCalendar(idx, { icon: ev.detail.value }));
+    row.querySelector('.hde-color').addEventListener('change', (ev) => this._updateCalendar(idx, { color: ev.target.value }));
+    row.querySelector('.hde-remove').addEventListener('click', () => this._removeCalendar(idx));
+    return row;
+  }
+
+  _createPicker(row, idx) {
+    const picker = document.createElement('ha-entity-picker');
+    picker.className = 'hde-picker';
+    picker.setAttribute('data-idx', idx);
+    picker.hass = this._hass;
+    picker.includeDomains = ['calendar'];
+    picker.label = 'Calendar';
+    picker.allowCustomEntity = true;
+    picker.addEventListener('value-changed', (ev) => {
+      const entity = ev.detail.value || '';
+      picker.value = entity;
+      row.querySelector('hearthlike-icon-field').entities = [entity];
+      this._updateCalendar(idx, { entity });
+    });
+    row.prepend(picker);
+    return picker;
+  }
+
+  _updateRow(row, cal, idx) {
+    const field = row.querySelector('hearthlike-icon-field');
+    row.querySelector('.hde-color').value = cal.color || '#378ADD';
+    if (this._hass) {
+      const picker = row.querySelector('.hde-picker') || this._createPicker(row, idx);
+      if (picker.value !== (cal.entity || '')) picker.value = cal.entity || '';
+      field.hass = this._hass;
+    }
+    field.entities = [cal.entity || ''];
+    field.value = cal.icon || '';
   }
 }
 
